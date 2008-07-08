@@ -1,0 +1,170 @@
+#!rake
+#
+# <%= settings['project_name'] %> rakefile
+#
+# Based on various other Rakefiles, especially one by Ben Bleything
+#
+# Copyright (c) <%= Time.now.year %> The FaerieMUD Consortium
+#
+# Authors:
+#  * <%= settings['author_name'] %> <<%= settings['author_email'] %>>
+#
+
+BEGIN {
+	require 'pathname'
+	basedir = Pathname.new( __FILE__ ).dirname
+
+	libdir = basedir + "lib"
+	extdir = basedir + "ext"
+
+	$LOAD_PATH.unshift( libdir.to_s ) unless $LOAD_PATH.include?( libdir.to_s )
+	$LOAD_PATH.unshift( extdir.to_s ) unless $LOAD_PATH.include?( extdir.to_s )
+}
+
+
+require 'rbconfig'
+require 'rubygems'
+require 'rake'
+require 'rake/rdoctask'
+require 'rake/testtask'
+require 'rake/packagetask'
+
+$dryrun = false
+
+### Config constants
+BASEDIR       = Pathname.new( __FILE__ ).dirname.relative_path_from( Pathname.getwd )
+LIBDIR        = BASEDIR + 'lib'
+EXTDIR        = BASEDIR + 'ext'
+DOCSDIR       = BASEDIR + 'docs'
+PKGDIR        = BASEDIR + 'pkg'
+RAKE_TASKDIR  = BASEDIR + 'rake'
+
+PKG_NAME      = '<%= project_name.downcase %>'
+PKG_SUMMARY   = '<%= settings['project_summary'] %>'
+PKG_VERSION   = File.read( LIBDIR + '<%= project_name.downcase %>.rb' )[ /VERSION = '(\d+\.\d+\.\d+)'/, 1 ]
+PKG_FILE_NAME = "#{PKG_NAME.downcase}-#{PKG_VERSION}"
+GEM_FILE_NAME = "#{PKG_FILE_NAME}.gem"
+
+RELEASE_NAME  = "RELEASE_#{PKG_VERSION.gsub(/\./, '_')}"
+
+ARTIFACTS_DIR = Pathname.new( ENV['CC_BUILD_ARTIFACTS'] || 'artifacts' )
+
+TEXT_FILES    = %w( Rakefile ChangeLog README LICENSE ).collect {|filename| BASEDIR + filename }
+LIB_FILES     = Pathname.glob( LIBDIR + '**/*.rb' ).delete_if {|item| item =~ /\.svn/ }
+EXT_FILES     = Pathname.glob( EXTDIR + '**/*.{c,h,rb}' ).delete_if {|item| item =~ /\.svn/ }
+
+SPECDIR       = BASEDIR + 'spec'
+SPEC_FILES    = Pathname.glob( SPECDIR + '**/*_spec.rb' ).delete_if {|item| item =~ /\.svn/ }
+SPEC_EXCLUDES = 'spec,/Library/Ruby,/var/lib,/usr/local/lib'
+
+
+RELEASE_FILES = TEXT_FILES + SPEC_FILES + LIB_FILES + EXT_FILES
+
+
+RCOV_OPTS = [
+	'--exclude', SPEC_EXCLUDES,
+	'--xrefs',
+	'--save',
+	'--callsites'
+  ]
+
+
+### Load task libraries
+require RAKE_TASKDIR + 'helpers.rb'
+require RAKE_TASKDIR + 'svn.rb'
+require RAKE_TASKDIR + 'verifytask.rb'
+Pathname.glob( RAKE_TASKDIR + '*.rb' ).each do |tasklib|
+	next if tasklib =~ %r{/(helpers|svn|verifytask)\.rb$}
+	begin
+		require tasklib
+	rescue ScriptError => err
+		fail "Task library '%s' failed to load: %s: %s" %
+			[ tasklib, err.class.name, err.message ]
+		trace "Backtrace: \n  " + err.backtrace.join( "\n  " )
+	rescue => err
+		log "Task library '%s' failed to load: %s: %s. Some tasks may not be available." %
+			[ tasklib, err.class.name, err.message ]
+		trace "Backtrace: \n  " + err.backtrace.join( "\n  " )
+	end
+end
+
+
+# Define some constants that depend on the 'svn' tasklib
+PKG_BUILD = get_svn_rev( BASEDIR ) || 0
+SNAPSHOT_PKG_NAME = "#{PKG_FILE_NAME}.#{PKG_BUILD}"
+SNAPSHOT_GEM_NAME = "#{SNAPSHOT_PKG_NAME}.gem"
+
+# Documentation constants
+RDOC_OPTIONS = [
+	'-w', '4',
+	'-SHN',
+	'-i', '.',
+	'-m', 'README',
+	'-W', '<%= settings['project_homepage'] %>/browser/trunk/'
+  ]
+
+# Release constants
+SMTP_HOST = 'mail.faeriemud.org'
+SMTP_PORT = 465 # SMTP + SSL
+
+# Project constants
+PROJECT_HOST = 'deveiate.org'
+PROJECT_PUBDIR = "/usr/local/www/public/code"
+PROJECT_DOCDIR = "#{PROJECT_PUBDIR}/#{PKG_NAME}"
+PROJECT_SCPURL = "#{PROJECT_HOST}:#{PROJECT_DOCDIR}"
+
+# RubyGem specification
+GEMSPEC   = Gem::Specification.new do |gem|
+	gem.name              = PKG_NAME.downcase
+	gem.version           = PKG_VERSION
+
+	gem.summary           = PKG_SUMMARY
+	gem.description       = <<-EOD
+<% for line in settings['project_description'] %>
+	<%= line %>
+<% end %>
+	EOD
+
+	gem.authors           = '<%= settings['author_name'] %>'
+	gem.email             = '<%= settings['author_email'] %>'
+	gem.homepage          = '<%= settings['project_homepage'] %>'
+	gem.rubyforge_project = 'deveiate'
+
+	gem.has_rdoc          = true
+	gem.rdoc_options      = RDOC_OPTIONS
+
+	gem.files             = RELEASE_FILES.
+		collect {|f| f.relative_path_from(BASEDIR).to_s }
+	gem.test_files        = SPEC_FILES.
+		collect {|f| f.relative_path_from(BASEDIR).to_s }
+end
+
+
+$trace = Rake.application.options.trace ? true : false
+$dryrun = Rake.application.options.dryrun ? true : false
+
+
+### Default task
+task :default  => [:clean, :spec, :rdoc, :package]
+
+
+### Task: clean
+CLEAN.include 'coverage'
+CLOBBER.include 'artifacts', 'coverage.info', PKGDIR
+
+
+### Cruisecontrol task
+desc "Cruisecontrol build"
+task :cruise => [:clean, :spec, :package] do |task|
+	raise "Artifacts dir not set." if ARTIFACTS_DIR.to_s.empty?
+	artifact_dir = ARTIFACTS_DIR.cleanpath
+	artifact_dir.mkpath
+	
+	$stderr.puts "Copying coverage stats..."
+	FileUtils.cp_r( 'coverage', artifact_dir )
+	
+	$stderr.puts "Copying packages..."
+	FileUtils.cp_r( FileList['pkg/*'].to_a, artifact_dir )
+end
+
+

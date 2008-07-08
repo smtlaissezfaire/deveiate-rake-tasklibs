@@ -1,0 +1,66 @@
+#!/usr/bin/env rake
+#  
+# A rakefile for creating/updating project Rakefiles
+# $Id$
+# 
+# Author: Michael Granger <ged@FaerieMUD.org>
+# 
+
+require 'pathname'
+require 'erb'
+require 'etc'
+
+TASKLIBDIR            = Pathname.new( __FILE__ ).dirname.relative_path_from( Pathname.getwd )
+TARGETDIR             = Pathname.getwd
+
+RAKEFILE_TEMPLATE     = TASKLIBDIR + 'Rakefile.template.erb'
+SETTINGS_QUESTIONS    = TASKLIBDIR + 'settings-questions.yml'
+
+PROJECT_SETTINGS_FILE = TARGETDIR + 'project.yml'
+RAKEFILE              = TARGETDIR + 'Rakefile'
+
+
+task :default => RAKEFILE
+
+
+### Main task: build the Rakefile by merging values from the project settings file with the 
+### Rakefile template.
+desc "Generate a new project Rakefile in the current directory"
+task RAKEFILE.to_s => [ RAKEFILE_TEMPLATE, PROJECT_SETTINGS_FILE ] do
+	template = Erb.new( RAKEFILE_TEMPLATE.read )
+	settings = YAML.load_file( PROJECT_SETTINGS_FILE )
+
+	RAKEFILE.write( template.run(binding()) )
+end
+
+CLOBBER.include( RAKEFILE )
+
+
+### File tasks
+file RAKEFILE_TEMPLATE.to_s
+file PROJECT_SETTINGS_FILE.to_s => SETTINGS_QUESTIONS do
+	settings = prompt_user_for_settings( SETTINGS_QUESTIONS )
+	
+end
+
+CLOBBER.include( PROJECT_SETTINGS_FILE )
+
+
+### Prompt the user for answers to the questions described in the given +questionsfile+, which
+### is a YAML file containing an Array of Hashes of the form:
+###   {
+###       '<settingname>' => {
+###           'prompt' => '<prompt question>',
+###           'validator' => '<code to eval to validate the user's answer in the variable "args">'
+###           'multiline' => true or false,
+###       }
+###   }
+### The value can also be a simple string, which is shorthand for { 'prompt' => 'string' }
+def prompt_user_for_settings( questionsfile )
+	questions = YAML.load_file( questionsfile )
+	questions.each do |field, question|
+		
+	end
+end
+
+
