@@ -1,6 +1,6 @@
 # 
 # Packaging Rake Tasks
-# 
+# $Id$
 # 
 
 require 'rake/packagetask'

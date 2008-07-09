@@ -1,6 +1,5 @@
 # The file that lists all the settings required to build a rakefile for a project. The values 
 # configure the prompts that will be given to the user when creating the Rakefile.
---
 - project_name: Project name
 - project_homepage:
     prompt: URL of project page

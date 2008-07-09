@@ -1,8 +1,11 @@
 # 
-# Style Fixup Rake Tasks for ThingFish
+# Style Fixup Rake Tasks
+# $Id$
 # 
+# Authors:
+# * Michael Granger <ged@FaerieMUD.org>
 # 
-# 
+
 
 ### Coding style checks and fixes
 namespace :style do
@@ -15,10 +18,7 @@ namespace :style do
 	
 	desc "Check source files for inconsistent indent and fix them"
 	task :fix_indent do
-		files = LIB_FILES +
-			SPEC_FILES +
-			PLUGIN_LIBS +
-			PLUGIN_SPECFILES
+		files = LIB_FILES + SPEC_FILES
 
 		badfiles = Hash.new {|h,k| h[k] = [] }
 		

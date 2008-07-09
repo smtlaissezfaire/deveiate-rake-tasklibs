@@ -29,6 +29,12 @@ ANSI_ATTRIBUTES = {
 }
 
 
+MULTILINE_PROMPT = <<-'EOF'
+Enter one or more values for '%s'.
+A blank line finishes input.
+EOF
+
+
 CLEAR_TO_EOL       = "\e[K"
 CLEAR_CURRENT_LINE = "\e[2K"
 
@@ -91,7 +97,7 @@ end
 
 
 ### Download the file at +sourceuri+ via HTTP and write it to +targetfile+.
-def download( sourceuri, targetfile )
+def download( sourceuri, targetfile=nil )
 	oldsync = $defout.sync
 	$defout.sync = true
 	require 'net/http'
@@ -132,6 +138,7 @@ def download( sourceuri, targetfile )
 				end
 			end
 		end
+		
 	end
 	
 	return targetpath
@@ -229,16 +236,37 @@ def prompt_with_default( prompt_string, default, failure_msg="Try again." )
 	response = nil
 
 	begin
+		default ||= '~'
 		response = prompt( "%s [%s]" % [ prompt_string, default ] )
-		response = default if response.empty?
+		response = default if !response.nil? && response.empty? 
 
-		if block_given? && ! yield( response ) 
+		# the block is a validator.  We need to make sure that the user didn't
+		# enter '~', because if they did, it's nil and we should move on.  If
+		# they didn't, then call the block.
+		if block_given? && response != '~' && ! yield( response )
 			error_message( failure_msg + "\n\n" )
 			response = nil
 		end
 	end while response.nil?
 
+	return nil if response == '~'
 	return response
+end
+
+
+### Prompt for an array of values
+def prompt_for_multiple_values( label )
+    $stderr.puts( MULTILINE_PROMPT % [label] )
+    
+    results = []
+    result = nil
+    
+    begin
+        result = Readline.readline( make_prompt_string("> ") )
+        results << result unless result.nil? || result.empty?
+    end until result.nil? || result.empty?
+    
+    return results
 end
 
 

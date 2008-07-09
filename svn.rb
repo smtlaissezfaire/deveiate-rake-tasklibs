@@ -1,6 +1,11 @@
-#####################################################################
-###	S U B V E R S I O N   T A S K S   A N D   H E L P E R S
-#####################################################################
+# 
+# Style Fixup Rake Tasks
+# $Id$
+# 
+# Authors:
+# * Michael Granger <ged@FaerieMUD.org>
+# 
+
 
 require 'pp'
 require 'yaml'
@@ -215,7 +220,7 @@ namespace :svn do
 		trace "Releases: %p" % [releases]
 		if releases.include?( release )
 			error "Version #{release} already has a branch (#{svnrelease}). Did you mean" +
-				"to increment the version in pluginfactory.rb?"
+				"to increment the version in #{VERSION_FILE}?"
 			fail
 		else
 			trace "No #{release} version currently exists"

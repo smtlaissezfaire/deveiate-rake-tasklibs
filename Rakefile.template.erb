@@ -28,6 +28,7 @@ require 'rake'
 require 'rake/rdoctask'
 require 'rake/testtask'
 require 'rake/packagetask'
+require 'rake/clean'
 
 $dryrun = false
 
@@ -39,9 +40,10 @@ DOCSDIR       = BASEDIR + 'docs'
 PKGDIR        = BASEDIR + 'pkg'
 RAKE_TASKDIR  = BASEDIR + 'rake'
 
-PKG_NAME      = '<%= project_name.downcase %>'
+PKG_NAME      = '<%= settings['project_name'].downcase %>'
 PKG_SUMMARY   = '<%= settings['project_summary'] %>'
-PKG_VERSION   = File.read( LIBDIR + '<%= project_name.downcase %>.rb' )[ /VERSION = '(\d+\.\d+\.\d+)'/, 1 ]
+VERSION_FILE  = LIBDIR + '<%= settings['project_name'].downcase %>.rb'
+PKG_VERSION   = VERSION_FILE.read[ /VERSION = '(\d+\.\d+\.\d+)'/, 1 ]
 PKG_FILE_NAME = "#{PKG_NAME.downcase}-#{PKG_VERSION}"
 GEM_FILE_NAME = "#{PKG_FILE_NAME}.gem"
 
@@ -58,7 +60,7 @@ SPEC_FILES    = Pathname.glob( SPECDIR + '**/*_spec.rb' ).delete_if {|item| item
 SPEC_EXCLUDES = 'spec,/Library/Ruby,/var/lib,/usr/local/lib'
 
 
-RELEASE_FILES = TEXT_FILES + SPEC_FILES + LIB_FILES + EXT_FILES
+RELEASE_FILES = FileList[ TEXT_FILES + SPEC_FILES + LIB_FILES + EXT_FILES ]
 
 
 RCOV_OPTS = [
@@ -69,25 +71,10 @@ RCOV_OPTS = [
   ]
 
 
-### Load task libraries
+### Load some task libraries that need to be loaded early
 require RAKE_TASKDIR + 'helpers.rb'
 require RAKE_TASKDIR + 'svn.rb'
 require RAKE_TASKDIR + 'verifytask.rb'
-Pathname.glob( RAKE_TASKDIR + '*.rb' ).each do |tasklib|
-	next if tasklib =~ %r{/(helpers|svn|verifytask)\.rb$}
-	begin
-		require tasklib
-	rescue ScriptError => err
-		fail "Task library '%s' failed to load: %s: %s" %
-			[ tasklib, err.class.name, err.message ]
-		trace "Backtrace: \n  " + err.backtrace.join( "\n  " )
-	rescue => err
-		log "Task library '%s' failed to load: %s: %s. Some tasks may not be available." %
-			[ tasklib, err.class.name, err.message ]
-		trace "Backtrace: \n  " + err.backtrace.join( "\n  " )
-	end
-end
-
 
 # Define some constants that depend on the 'svn' tasklib
 PKG_BUILD = get_svn_rev( BASEDIR ) || 0
@@ -113,6 +100,16 @@ PROJECT_PUBDIR = "/usr/local/www/public/code"
 PROJECT_DOCDIR = "#{PROJECT_PUBDIR}/#{PKG_NAME}"
 PROJECT_SCPURL = "#{PROJECT_HOST}:#{PROJECT_DOCDIR}"
 
+# Gem dependencies: gemname => version
+DEPENDENCIES = {
+#	'mongrel'       => '',
+}
+
+# Non-gem requirements: packagename => version
+REQUIREMENTS = {
+#	'Apache'  => '>= 2.2.6',
+}
+
 # RubyGem specification
 GEMSPEC   = Gem::Specification.new do |gem|
 	gem.name              = PKG_NAME.downcase
@@ -137,12 +134,50 @@ GEMSPEC   = Gem::Specification.new do |gem|
 		collect {|f| f.relative_path_from(BASEDIR).to_s }
 	gem.test_files        = SPEC_FILES.
 		collect {|f| f.relative_path_from(BASEDIR).to_s }
+		
+	DEPENDENCIES.each do |name, version|
+		version = '>= 0' if version.length.zero?
+		gem.add_dependency( name, version )
+	end
+	
+	REQUIREMENTS.each do |name, version|
+		gem.requirements << [ name, version ].compact.join(' ')
+	end
 end
 
+
+# Load any remaining task libraries
+Pathname.glob( RAKE_TASKDIR + '*.rb' ).each do |tasklib|
+	RELEASE_FILES.include( tasklib )
+
+	next if tasklib =~ %r{/(helpers|svn|verifytask)\.rb$}
+	begin
+		require tasklib
+	rescue ScriptError => err
+		fail "Task library '%s' failed to load: %s: %s" %
+			[ tasklib, err.class.name, err.message ]
+		trace "Backtrace: \n  " + err.backtrace.join( "\n  " )
+	rescue => err
+		log "Task library '%s' failed to load: %s: %s. Some tasks may not be available." %
+			[ tasklib, err.class.name, err.message ]
+		trace "Backtrace: \n  " + err.backtrace.join( "\n  " )
+	end
+end
 
 $trace = Rake.application.options.trace ? true : false
 $dryrun = Rake.application.options.dryrun ? true : false
 
+# Load any project-specific rules defined in 'Rakefile.local' if it exists
+LOCAL_RAKEFILE = BASEDIR + 'Rakefile.local'
+if LOCAL_RAKEFILE.exist?
+	import LOCAL_RAKEFILE 
+	RELEASE_FILES.include( LOCAL_RAKEFILE.to_s )
+end
+
+
+#####################################################################
+###	T A S K S 	
+#####################################################################
 
 ### Default task
 task :default  => [:clean, :spec, :rdoc, :package]

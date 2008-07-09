@@ -73,36 +73,7 @@ end
 	
 
 ### Task: install gems for development tasks
-DEPENDENCIES = %w[
-	mongrel pluginfactory rcov uuidtools rote rspec lockfile rcodetools coderay redcloth
-  ]
 task :install_dependencies do
-	install_gems( *DEPENDENCIES )
+	install_gems( DEPENDENCIES.keys )
 end
-
-NONGEM_INSTALLS = {
-	:cl_xmlserial => 'http://prdownloads.sourceforge.net/clxmlserial/clxmlserial.1.0.pre4.zip'
-}
-
-### Task: install gems for plugins
-PLUGIN_DEPENDENCIES = %w[json exifr ruby-mp3info tidy sqlite3-ruby sequel]
-task :install_plugin_dependencies do
-	
-	workdir = Pathname.new( Dir.tmpdir )
-	unzip = which( 'unzip' ) or
-		fail "Can't extract downloads: unzip: no such file or directory"
-	
-	install_gems( *PLUGIN_DEPENDENCIES )
-
-	# Install RMagick
-	# Install cl/xmlfilter
-	targetzip = workdir + 'clxmlserial.zip'
-	download( NONGEM_INSTALLS[:cl_xmlserial], targetzip )
-	system( unzip, '-d', workdir, targetzip )
-	clxmldir = workdir + 'clxmlserial'
-	Dir.chdir( clxmldir ) do
-		ruby( 'install.rb' )
-	end
-end
-
 
