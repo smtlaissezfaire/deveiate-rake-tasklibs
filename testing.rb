@@ -6,6 +6,7 @@
 # * Michael Granger <ged@FaerieMUD.org>
 # 
 
+COVERAGE_MINIMUM = 85.0 unless defined?( COVERAGE_MINIMUM )
 
 ### RSpec specifications
 begin
@@ -107,7 +108,7 @@ begin
 		### Task: verify coverage
 		desc "Build coverage statistics"
 		VerifyTask.new( :verify => :rcov ) do |task|
-			task.threshold = 85.0
+			task.threshold = COVERAGE_MINIMUM
 		end
 
 		desc "Run RCov in 'spec-only' mode to check coverage from specs"
