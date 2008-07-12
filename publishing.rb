@@ -122,6 +122,13 @@ begin
 				run 'ssh', PROJECT_HOST, "rm -rf #{PROJECT_DOCDIR}"
 				run 'scp', '-qCr', 'docs', PROJECT_SCPURL
 			end
+			when_writing( "Uploading packages") do
+				pkgs = Pathname.glob( PKGDIR + "#{PKG_FILE_NAME}.{gem,tar.gz,tar.bz2,zip}" )
+				log "Uploading %d packages to #{PROJECT_PUBURL}" % [ pkgs.length ]
+				pkgs.each do |pkgfile|
+					run 'scp', '-qC', pkgfile, PROJECT_PUBURL
+                end
+            end
 		end
 
 		
@@ -165,8 +172,12 @@ begin
 		desc 'Send out a release announcement'
 		task :announce => [RELEASE_ANNOUNCE_FILE] do
 			email         = TMail::Mail.new
-			# email.to      = 'Ruby-Talk List <ruby-talk@ruby-lang.org>'
-			email.to      = 'rubymage@gmail.com'
+			if $dryrun
+				email.to      = 'rubymage@gmail.com'
+			else
+				email.to      = 'Ruby-Talk List <ruby-talk@ruby-lang.org>'
+				email.bcc     = 'rubymage@gmail.com'
+			end
 			email.from    = GEMSPEC.email
 			email.subject = "[ANN] #{PKG_NAME} #{PKG_VERSION}"
 			email.body    = File.read( RELEASE_ANNOUNCE_FILE )
@@ -206,7 +217,12 @@ begin
 
 			rf = RubyForge.new
 			log 'Logging in to RubyForge'
-			rf.login
+     
+			# Make sure this release doesn't already exist
+			releases = rf.autoconfig['release_ids']
+			if releases.key?( GEMSPEC.name ) && releases[ GEMSPEC.name ].key?( PKG_VERSION )
+				fail "Rubyforge seems to already have #{ PKG_FILE_NAME }"
+			end
 
 			config = rf.userconfig
 			config['release_notes'] = GEMSPEC.description
@@ -220,8 +236,13 @@ begin
 
 			log "Releasing #{PKG_FILE_NAME}"
 			when_writing do
-				log "Would have run: rf.add_release", project, PKG_NAME.downcase, PKG_VERSION,
-				 	*files
+				log "Publishing to RubyForge: \n",
+					"\tproject: #{project}\n",
+					"\tpackage: #{PKG_NAME.downcase}\n",
+					"\tpackage version: #{PKG_VERSION}\n",
+					"\tfiles: " + files.collect {|f| f.to_s }.join(', ') + "\n"
+				rf.login
+				rf.add_release( project, PKG_NAME.downcase, PKG_VERSION, *files )
 			end
 		end
 	end

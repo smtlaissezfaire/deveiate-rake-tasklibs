@@ -29,7 +29,6 @@ begin
 		task.spec_opts = COMMON_SPEC_OPTS
 	end
 
-	task :test => :spec
 
 	namespace :spec do
 		desc "Run rspec every time there's a change to one of the files"

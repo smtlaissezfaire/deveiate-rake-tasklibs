@@ -1,5 +1,5 @@
 # 
-# Style Fixup Rake Tasks
+# Subversion Rake Tasks
 # $Id$
 # 
 # Authors:
