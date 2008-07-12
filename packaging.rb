@@ -34,9 +34,9 @@ file gempath.to_s => [PKGDIR.to_s] + GEMSPEC.files do
 end
 
 ### Task: install
-desc "Install <%= project_name %> as a conventional library"
+desc "Install #{PKG_NAME} as a conventional library"
 task :install do
-	log "Installing <%= project_name %> as a conventional library"
+	log "Installing #{PKG_NAME} as a conventional library"
 	sitelib = Pathname.new( CONFIG['sitelibdir'] )
 	sitearch = Pathname.new( CONFIG['sitearchdir'] )
 	Dir.chdir( LIBDIR ) do
@@ -63,7 +63,7 @@ end
 
 
 ### Task: install_gem
-desc "Install <%= project_name %> from a locally-built gem"
+desc "Install #{PKG_NAME} from a locally-built gem"
 task :install_gem => [:package] do
 	$stderr.puts 
 	installer = Gem::Installer.new( %{pkg/#{PKG_FILE_NAME}.gem} )
@@ -71,7 +71,7 @@ task :install_gem => [:package] do
 end
 
 ### Task: uninstall_gem
-desc "Install the <%= project_name %> gem"
+desc "Install the #{PKG_NAME} gem"
 task :uninstall_gem => [:clean] do
 	uninstaller = Gem::Uninstaller.new( PKG_FILE_NAME )
 	uninstaller.uninstall

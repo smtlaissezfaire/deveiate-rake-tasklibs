@@ -8,6 +8,13 @@
 
 COVERAGE_MINIMUM = 85.0 unless defined?( COVERAGE_MINIMUM )
 
+desc "Run all defined tests"
+task :test do
+	Rake::Task[:spec].invoke unless SPEC_FILES.empty?
+	Rake::Task[:unittests].invoke unless TEST_FILES.empty?
+end
+
+
 ### RSpec specifications
 begin
 	gem 'rspec', '>= 1.1.3'
@@ -68,6 +75,26 @@ rescue LoadError => err
 end
 
 
+### Test::Unit tests
+begin
+	require 'test/unit'
+	require 'rake/testtask'
+	
+	Rake::TestTask.new( :unittests ) do |task|
+		task.libs += [LIBDIR]
+		task.test_files = TEST_FILES
+		task.verbose = true
+	end
+
+rescue LoadError => err
+	task :no_test do
+		$stderr.puts "Test tasks not defined: %s" % [ err.message ]
+	end
+
+	task :unittests => :no_rspec
+end
+
+	
 ### RCov (via RSpec) tasks
 begin
 	gem 'rcov'

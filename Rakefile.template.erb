@@ -59,8 +59,10 @@ SPECDIR       = BASEDIR + 'spec'
 SPEC_FILES    = Pathname.glob( SPECDIR + '**/*_spec.rb' ).delete_if {|item| item =~ /\.svn/ }
 SPEC_EXCLUDES = 'spec,/Library/Ruby,/var/lib,/usr/local/lib'
 
+TESTDIR       = BASEDIR + 'tests'
+TEST_FILES    = Pathname.glob( TESTDIR + '**/*.tests.rb' )
 
-RELEASE_FILES = FileList[ TEXT_FILES + SPEC_FILES + LIB_FILES + EXT_FILES ]
+RELEASE_FILES = FileList[ TEXT_FILES + SPEC_FILES + TEST_FILES + LIB_FILES + EXT_FILES ]
 
 
 RCOV_OPTS = [
