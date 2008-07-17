@@ -99,6 +99,7 @@ begin
 
 	namespace :release do
 		task :default => [ 'svn:release', :publish, :announce, :project ]
+		task :test => [ 'svn:release', :publish, :announce, :project ]
 
 		desc "Generate the release notes"
 		task :notes => [RELEASE_NOTES_FILE]
@@ -172,7 +173,7 @@ begin
 		desc 'Send out a release announcement'
 		task :announce => [RELEASE_ANNOUNCE_FILE] do
 			email         = TMail::Mail.new
-			if $dryrun
+			if $trace
 				email.to      = 'rubymage@gmail.com'
 			else
 				email.to      = 'Ruby-Talk List <ruby-talk@ruby-lang.org>'

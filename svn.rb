@@ -23,6 +23,12 @@ KEYWORDED_FILEPATTERN = /^(?:Rakefile|.*\.(?:rb|js|html|template))$/i
 
 COMMIT_MSG_FILE = 'commit-msg.txt'
 
+SVN_TRUNK_DIR    = 'trunk' unless defined?( SVN_TRUNK_DIR )
+SVN_RELEASES_DIR = 'branches' unless defined?( SVN_RELEASES_DIR )
+SVN_BRANCHES_DIR = 'branches' unless defined?( SVN_BRANCHES_DIR )
+SVN_TAGS_DIR     = 'tags' unless defined?( SVN_TAGS_DIR )
+
+
 ###
 ### Subversion-specific Helpers
 ###
@@ -129,7 +135,7 @@ end
 ### Return the URL of the latest timestamp in the tags directory.
 def get_latest_svn_timestamp_tag
 	rooturl = get_svn_repo_root()
-	tagsurl = rooturl + '/tags'
+	tagsurl = rooturl + "/#{SVN_TAGS_DIR}"
 	
 	tags = svn_ls( tagsurl ).grep( TAG_TIMESTAMP_PATTERN ).sort
 	return nil if tags.nil? || tags.empty?
@@ -151,10 +157,10 @@ end
 ### Return the URL of the latest timestamp in the tags directory.
 def get_latest_release_tag
 	rooturl    = get_svn_repo_root()
-	releaseurl = rooturl + '/tags'
+	releaseurl = rooturl + "/#{SVN_RELEASES_DIR}"
 	
 	tags = svn_ls( releaseurl ).grep( RELEASE_VERSION_PATTERN ).sort_by do |tag|
-		tag.split('.').collect {|i| Integer(i) }
+		tag[RELEASE_VERSION_PATTERN].split('.').collect {|i| Integer(i) }
 	end
 	return nil if tags.empty?
 
@@ -174,8 +180,8 @@ end
 ### Extract the svn log from the specified subversion working +dir+, 
 ### starting from rev +start+ and ending with rev +finish+, and return it.
 def make_svn_log( dir='.', start='PREV', finish='HEAD' )
-	trace "svn -r#{start}:#{finish} log #{dir}"
-	log = IO.read( '|-' ) or exec 'svn', "-r#{start}:#{finish}", 'log', dir
+	trace "svn log -r#{start}:#{finish} #{dir}"
+	log = IO.read( '|-' ) or exec 'svn', 'log', "-r#{start}:#{finish}", dir
 	fail "No log between #{start} and #{finish}." if log.empty?
 
 	return log
@@ -195,8 +201,8 @@ namespace :svn do
 	task :tag do
 		svninfo   = get_svn_info()
 		tag       = make_new_tag()
-		svntrunk  = svninfo['Repository Root'] + '/trunk'
-		svntagdir = svninfo['Repository Root'] + '/tags'
+		svntrunk  = svninfo['Repository Root'] + "/#{SVN_TRUNK_DIR}"
+		svntagdir = svninfo['Repository Root'] + "/#{SVN_TAGS_DIR}"
 		svntag    = svntagdir + '/' + tag
 
 		desc = "Tagging trunk as #{svntag}"
@@ -211,8 +217,8 @@ namespace :svn do
 	task :release do
 		last_tag    = get_latest_svn_timestamp_tag()
 		svninfo     = get_svn_info()
-		svntrunk    = svninfo['Repository Root'] + '/trunk'
-		svnrel      = svninfo['Repository Root'] + '/tags'
+		svntrunk    = svninfo['Repository Root'] + "/#{SVN_TRUNK_DIR}"
+		svnrel      = svninfo['Repository Root'] + "/#{SVN_TAGS_DIR}"
 		release     = RELEASE_NAME
 		svnrelease  = svnrel + '/' + release
 

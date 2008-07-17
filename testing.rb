@@ -10,8 +10,15 @@ COVERAGE_MINIMUM = 85.0 unless defined?( COVERAGE_MINIMUM )
 
 desc "Run all defined tests"
 task :test do
-	Rake::Task[:spec].invoke unless SPEC_FILES.empty?
-	Rake::Task[:unittests].invoke unless TEST_FILES.empty?
+	unless SPEC_FILES.empty?
+		log "Running specs"
+		Rake::Task['spec:quiet'].invoke
+	end
+	
+	unless TEST_FILES.empty?
+		log "Running unit tests"
+		Rake::Task[:unittests].invoke 
+	end
 end
 
 
@@ -76,7 +83,6 @@ end
 
 ### Test::Unit tests
 begin
-	require 'test/unit'
 	require 'rake/testtask'
 	
 	Rake::TestTask.new( :unittests ) do |task|
