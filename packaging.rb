@@ -3,8 +3,11 @@
 # $Id$
 # 
 
+require 'rbconfig'
 require 'rake/packagetask'
 require 'rake/gempackagetask'
+
+include Config
 
 ### Task: gem
 ### Task: package
