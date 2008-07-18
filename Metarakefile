@@ -15,12 +15,14 @@ require 'rake/rdoctask'
 require 'rake/testtask'
 require 'rake/packagetask'
 require 'rake/clean'
-require 'rake/helpers'
 
+tasklibdir = Pathname.new( __FILE__ ).dirname.relative_path_from( Pathname.getwd )
+require "#{tasklibdir}/helpers"
 
 $trace = Rake.application.options.trace ? true : false
 $dryrun = Rake.application.options.dryrun ? true : false
 
+VERSION = '1.0.0'
 
 #####################################################################
 ###	C O N S T A N T S
@@ -85,13 +87,16 @@ def prompt_user_for_setting( question )
 	case promptconfig
 	when String
 		prompttext = promptconfig
+
 	when Hash
 		prompttext = promptconfig['prompt']
 		validation_block = eval( "lambda {|*args| #{promptconfig['validator']}}") if
 			promptconfig.key?( 'validator' )
 		multiline = promptconfig.key?( 'multiline' ) && 
 			promptconfig['multiline'] =~ /t(rue)?|y(es)?/i
+
 	else
+		return field, promptconfig
 		fail "Unhandled question type %p (%s)" % [ question, field ]
 	end
 
@@ -120,7 +125,7 @@ task :default => RAKEFILE
 ### Rakefile template.
 desc "Generate a new project Rakefile in the current directory"
 task RAKEFILE.to_s => [ RAKEFILE_TEMPLATE, PROJECT_SETTINGS_FILE ] do
-	template = ERB.new( RAKEFILE_TEMPLATE.read )
+	template = ERB.new( RAKEFILE_TEMPLATE.read, 0, '<>' )
 	settings = YAML.load_file( PROJECT_SETTINGS_FILE )
 
 	output = template.result( binding() )

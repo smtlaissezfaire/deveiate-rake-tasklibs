@@ -110,12 +110,24 @@ begin
 	### Task: coverage (via RCov)
 	### Task: rcov
 	desc "Build test coverage reports"
-	Spec::Rake::SpecTask.new( :coverage ) do |task|
-		task.spec_files = SPEC_FILES
-		task.libs += [LIBDIR]
-		task.spec_opts = ['-f', 'p', '-b']
-		task.rcov_opts = RCOV_OPTS
-		task.rcov = true
+	unless SPEC_FILES.empty?
+		Spec::Rake::SpecTask.new( :coverage ) do |task|
+			task.spec_files = SPEC_FILES
+			task.libs += [LIBDIR]
+			task.spec_opts = ['-f', 'p', '-b']
+			task.rcov_opts = RCOV_OPTS
+			task.rcov = true
+		end
+	end
+	unless TEST_FILES.empty?
+		require 'rcov/rcovtask'
+
+		Rcov::RcovTask.new do |task|
+			task.libs += [LIBDIR]
+			task.test_files = TEST_FILES
+			task.verbose = true
+			task.rcov_opts = RCOV_OPTS
+		end
 	end
 
 

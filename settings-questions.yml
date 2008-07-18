@@ -7,6 +7,8 @@
 - project_description:
     prompt: Project description
     multiline: true
+- project_dependencies: []
+- project_requirements: []
 
 - author_name: Your name
 - author_email: Your email address
