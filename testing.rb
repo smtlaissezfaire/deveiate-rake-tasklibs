@@ -7,6 +7,15 @@
 # 
 
 COVERAGE_MINIMUM = 85.0 unless defined?( COVERAGE_MINIMUM )
+SPEC_FILES       = [] unless defined?( SPEC_FILES )
+TEST_FILES       = [] unless defined?( TEST_FILES )
+
+COMMON_SPEC_OPTS = ['-c', '-f', 's'] unless defined?( COMMON_SPEC_OPTS )
+
+COVERAGE_TARGETDIR = BASEDIR + 'coverage' unless defined?( COVERAGE_TARGETDIR )
+RCOV_EXCLUDES      = 'spec,tests,/Library/Ruby,/var/lib,/usr/local/lib' unless
+	defined?( RCOV_EXCLUDES )
+
 
 desc "Run all defined tests"
 task :test do
@@ -26,8 +35,6 @@ end
 begin
 	gem 'rspec', '>= 1.1.3'
 	require 'spec/rake/spectask'
-
-	COMMON_SPEC_OPTS = ['-c', '-f', 's']
 
 	### Task: spec
 	Spec::Rake::SpecTask.new( :spec ) do |task|
@@ -104,8 +111,6 @@ end
 begin
 	gem 'rcov'
 	gem 'rspec', '>= 1.1.3'
-
-	COVERAGE_TARGETDIR = BASEDIR + 'coverage'
 
 	### Task: coverage (via RCov)
 	### Task: rcov
