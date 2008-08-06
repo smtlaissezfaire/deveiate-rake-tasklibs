@@ -238,7 +238,9 @@ def prompt_with_default( prompt_string, default, failure_msg="Try again." )
 	begin
 		default ||= '~'
 		response = prompt( "%s [%s]" % [ prompt_string, default ] )
-		response = default if !response.nil? && response.empty? 
+		response = default.to_s if !response.nil? && response.empty? 
+
+		trace "Validating reponse %p" % [ response ]
 
 		# the block is a validator.  We need to make sure that the user didn't
 		# enter '~', because if they did, it's nil and we should move on.  If
@@ -255,18 +257,25 @@ end
 
 
 ### Prompt for an array of values
-def prompt_for_multiple_values( label )
+def prompt_for_multiple_values( label, default=nil )
     $stderr.puts( MULTILINE_PROMPT % [label] )
-    
+    if default
+		$stderr.puts "Enter a single blank line to keep the default:\n  %p" % [ default ]
+	end
+
     results = []
     result = nil
     
     begin
         result = Readline.readline( make_prompt_string("> ") )
-        results << result unless result.nil? || result.empty?
+		if result.nil? || result.empty?
+			results << default if default && results.empty?
+		else
+        	results << result 
+		end
     end until result.nil? || result.empty?
     
-    return results
+    return results.flatten
 end
 
 

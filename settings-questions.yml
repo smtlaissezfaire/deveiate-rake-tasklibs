@@ -4,11 +4,22 @@
 - project_homepage:
     prompt: URL of project page
     validator: URI.parse( args.first )
+    stringify: true
+- project_synopsis: Project synopsis
 - project_description:
     prompt: Project description
     multiline: true
-- project_dependencies: []
-- project_requirements: []
+    post-process: "args.join(\"\n\")"
 
 - author_name: Your name
 - author_email: Your email address
+
+- project_dependencies:
+    prompt: "Project dependencies (<gemname>: <gem_version_spec>)"
+    multiline: true
+    post-process: "Hash[ *(args.collect {|line| line.split(/:\s*/, 2) }.flatten) ]"
+- project_requirements:
+    prompt: "Project requirements (<software>: <version>)"
+    multiline: true
+    post-process: "Hash[ *(args.collect {|line| line.split(/:\s*/, 2) }.flatten) ]"
+

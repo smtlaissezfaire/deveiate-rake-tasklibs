@@ -56,14 +56,14 @@ public
 ###       }
 ###   }
 ### The value can also be a simple string, which is shorthand for { 'prompt' => 'string' }
-def build_settings_hash( questionsfile )
+def build_settings_hash( questionsfile, defaults )
 	settings = {}
 	
 	questions = YAML.load_file( questionsfile )
 	trace "Questions are:\n%p" % [ questions ]
 	
 	questions.inject( settings ) do |h, question|
-		field, answer = self.prompt_user_for_setting( question )
+		field, answer = self.prompt_user_for_setting( question, defaults[question.keys.first] )
 		h[ field ] = answer
 		h
 	end
@@ -73,15 +73,16 @@ end
 
 
 ### Prompt the user with the given +question_+ and return the field name and the user's answer.
-def prompt_user_for_setting( question )
+def prompt_user_for_setting( question, default )
 	trace "Prompting user using %p" % [ question ]
 	field, promptconfig = question.to_a.flatten
 	trace " %p, %p" % [ field, promptconfig ]
 	
-	prompttext = nil
+	prompttext       = nil
 	validation_block = lambda {|*args| args.first }
-	multiline = false
-	answer = nil
+	multiline        = false
+	answer           = nil
+	postproc         = nil
 	
 	# Configure the prompt from the question Hash or String
 	case promptconfig
@@ -92,8 +93,9 @@ def prompt_user_for_setting( question )
 		prompttext = promptconfig['prompt']
 		validation_block = eval( "lambda {|*args| #{promptconfig['validator']}}") if
 			promptconfig.key?( 'validator' )
-		multiline = promptconfig.key?( 'multiline' ) && 
-			promptconfig['multiline'] =~ /t(rue)?|y(es)?/i
+		multiline = promptconfig['multiline']
+		postproc = eval( "lambda {|*args| #{promptconfig['post-proc']}}") if
+			promptconfig.key?( 'post-proc' )
 
 	else
 		return field, promptconfig
@@ -102,11 +104,18 @@ def prompt_user_for_setting( question )
 
 	# Ask the user for input
 	if multiline
+		trace "  prompting for multiline input"
 		begin
-			answer = prompt_for_multiple_values( prompttext )
+			answer = prompt_for_multiple_values( prompttext, default )
 		end until validation_block.call( answer )
+		answer = postproc.call( *answer ) if postproc
 	else
-		answer = prompt( prompttext, &validation_block )
+		trace "  prompting for single-line input"
+		if default
+			answer = prompt_with_default( prompttext, default, &validation_block )
+		else
+			answer = prompt( prompttext, &validation_block )
+		end
 	end
 
 	return field, answer
@@ -125,7 +134,7 @@ task :default => RAKEFILE
 ### Rakefile template.
 desc "Generate a new project Rakefile in the current directory"
 task RAKEFILE.to_s => [ RAKEFILE_TEMPLATE, PROJECT_SETTINGS_FILE ] do
-	template = ERB.new( RAKEFILE_TEMPLATE.read, 0, '<>' )
+	template = ERB.new( RAKEFILE_TEMPLATE.read, nil, '<>' )
 	settings = YAML.load_file( PROJECT_SETTINGS_FILE )
 
 	output = template.result( binding() )
@@ -141,7 +150,12 @@ CLOBBER.include( RAKEFILE )
 file RAKEFILE_TEMPLATE.to_s
 file PROJECT_SETTINGS_FILE.to_s
 task PROJECT_SETTINGS_FILE.to_s => SETTINGS_QUESTIONS do
-	settings = build_settings_hash( SETTINGS_QUESTIONS )
+	defaults = {}
+	if PROJECT_SETTINGS_FILE.exist?
+		defaults = YAML.load_file( PROJECT_SETTINGS_FILE )
+	end
+	
+	settings = build_settings_hash( SETTINGS_QUESTIONS, defaults )
 	PROJECT_SETTINGS_FILE.open( File::WRONLY|File::TRUNC|File::CREAT ) do |fh|
 		fh.print( YAML.dump(settings) )
 	end
