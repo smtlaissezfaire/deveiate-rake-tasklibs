@@ -37,6 +37,9 @@ SETTINGS_QUESTIONS    = TASKLIBDIR + 'settings-questions.yml'
 PROJECT_SETTINGS_FILE = TARGETDIR + 'project.yml'
 RAKEFILE              = TARGETDIR + 'Rakefile'
 
+LICENSE_TEMPLATE      = TASKLIBDIR + 'LICENSE.template.erb'
+LICENSE               = TARGETDIR + 'LICENSE'
+
 
 #####################################################################
 ###	H E L P E R   F U N C T I O N S
@@ -127,7 +130,7 @@ end
 ###	T A S K S
 #####################################################################
 
-task :default => RAKEFILE
+task :default => [ RAKEFILE, LICENSE ]
 
 
 ### Main task: build the Rakefile by merging values from the project settings file with the 
@@ -144,6 +147,19 @@ task RAKEFILE.to_s => [ RAKEFILE_TEMPLATE, PROJECT_SETTINGS_FILE ] do
 end
 
 CLOBBER.include( RAKEFILE )
+
+
+### Task: Build a LICENSE file
+desc "Generate a new project LICENSE file in the current directory"
+task LICENSE.to_s => [ LICENSE_TEMPLATE, PROJECT_SETTINGS_FILE ] do
+	template = ERB.new( LICENSE_TEMPLATE.read, nil, '<>' )
+	settings = YAML.load_file( PROJECT_SETTINGS_FILE )
+
+	output = template.result( binding() )
+	LICENSE.open( File::WRONLY|File::CREAT|File::TRUNC ) do |fh|
+		fh.print output
+	end
+end
 
 
 ### File tasks
