@@ -38,7 +38,6 @@ LIBDIR        = BASEDIR + 'lib'
 EXTDIR        = BASEDIR + 'ext'
 DOCSDIR       = BASEDIR + 'docs'
 PKGDIR        = BASEDIR + 'pkg'
-RAKE_TASKDIR  = BASEDIR + 'rake'
 
 PKG_NAME      = '<%= settings['project_name'].downcase %>'
 PKG_SUMMARY   = '<%= settings['project_summary'] %>'
@@ -61,7 +60,13 @@ SPEC_FILES    = Pathname.glob( SPECDIR + '**/*_spec.rb' ).delete_if {|item| item
 TESTDIR       = BASEDIR + 'tests'
 TEST_FILES    = Pathname.glob( TESTDIR + '**/*.tests.rb' ).delete_if {|item| item =~ /\.svn/ }
 
-RELEASE_FILES = FileList[ TEXT_FILES + SPEC_FILES + TEST_FILES + LIB_FILES + EXT_FILES ]
+RAKE_TASKDIR  = BASEDIR + 'rake'
+RAKE_TASKLIBS = Pathname.glob( RAKE_TASKDIR + '*.rb' )
+
+LOCAL_RAKEFILE = BASEDIR + 'Rakefile.local'
+
+RELEASE_FILES = TEXT_FILES + SPEC_FILES + TEST_FILES + LIB_FILES + EXT_FILES + RAKE_TASKLIBS
+RELEASE_FILES << LOCAL_RAKEFILE if LOCAL_RAKEFILE.exist?
 
 COVERAGE_MINIMUM = ENV['COVERAGE_MINIMUM'] ? Float( ENV['COVERAGE_MINIMUM'] ) : 85.0
 RCOV_EXCLUDES = 'spec,tests,/Library/Ruby,/var/lib,/usr/local/lib'
@@ -164,11 +169,12 @@ GEMSPEC   = Gem::Specification.new do |gem|
 	end
 end
 
+$trace = Rake.application.options.trace ? true : false
+$dryrun = Rake.application.options.dryrun ? true : false
+
 
 # Load any remaining task libraries
-Pathname.glob( RAKE_TASKDIR + '*.rb' ).each do |tasklib|
-	RELEASE_FILES.include( tasklib )
-
+RAKE_TASKLIBS.each do |tasklib|
 	next if tasklib =~ %r{/(helpers|svn|verifytask)\.rb$}
 	begin
 		require tasklib
@@ -183,15 +189,8 @@ Pathname.glob( RAKE_TASKDIR + '*.rb' ).each do |tasklib|
 	end
 end
 
-$trace = Rake.application.options.trace ? true : false
-$dryrun = Rake.application.options.dryrun ? true : false
-
 # Load any project-specific rules defined in 'Rakefile.local' if it exists
-LOCAL_RAKEFILE = BASEDIR + 'Rakefile.local'
-if LOCAL_RAKEFILE.exist?
-	import LOCAL_RAKEFILE 
-	RELEASE_FILES.include( LOCAL_RAKEFILE.to_s )
-end
+import LOCAL_RAKEFILE if LOCAL_RAKEFILE.exist?
 
 
 #####################################################################
@@ -234,4 +233,12 @@ task :cruise => [:clean, :spec, :package] do |task|
 	FileUtils.cp_r( FileList['pkg/*'].to_a, artifact_dir )
 end
 
+
+desc "Update the build system to the latest version"
+task :update_build do
+	log "Updating the build system"
+	sh 'svn', 'up', RAKE_TASKDIR
+	log "Updating the Rakefile"
+	sh 'rake', '-f', RAKE_TASKDIR + 'Metarakefile'
+end
 
