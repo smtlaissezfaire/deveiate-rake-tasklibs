@@ -202,8 +202,17 @@ task :default  => [:clean, :spec, :rdoc, :package]
 CLEAN.include 'coverage'
 CLOBBER.include 'artifacts', 'coverage.info', PKGDIR
 
+### Task: changelog
+file 'ChangeLog' do |task|
+	changelog = make_svn_changelog()
+	trace "SVN changelog is: %p" % [ changelog ]
+	File.open( task.name, 'w' ) do |fh|
+		fh.print( changelog )
+	end
+end
 
-### Cruisecontrol task
+
+### Task: cruise (Cruisecontrol task)
 desc "Cruisecontrol build"
 task :cruise => [:clean, :spec, :package] do |task|
 	raise "Artifacts dir not set." if ARTIFACTS_DIR.to_s.empty?

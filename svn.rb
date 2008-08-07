@@ -9,6 +9,7 @@
 
 require 'pp'
 require 'yaml'
+require 'date'
 
 # Strftime format for tags/releases
 TAG_TIMESTAMP_FORMAT = '%Y%m%d-%H%M%S'
@@ -27,6 +28,10 @@ SVN_TRUNK_DIR    = 'trunk' unless defined?( SVN_TRUNK_DIR )
 SVN_RELEASES_DIR = 'branches' unless defined?( SVN_RELEASES_DIR )
 SVN_BRANCHES_DIR = 'branches' unless defined?( SVN_BRANCHES_DIR )
 SVN_TAGS_DIR     = 'tags' unless defined?( SVN_TAGS_DIR )
+
+FILE_INDENT = " " * 12
+LOG_INDENT = " " * 3
+
 
 
 ###
@@ -187,6 +192,97 @@ def make_svn_log( dir='.', start='PREV', finish='HEAD' )
 	return log
 end
 
+
+### Extract the verbose XML svn log from the specified subversion working +dir+, 
+### starting from rev +start+ and ending with rev +finish+, and return it.
+def make_xml_svn_log( dir='.', start='PREV', finish='HEAD' )
+	trace "svn log --xml --verbose -r#{start}:#{finish} #{dir}"
+	log = IO.read( '|-' ) or exec 'svn', 'log', '--verbose', '--xml', "-r#{start}:#{finish}", dir
+	fail "No log between #{start} and #{finish}." if log.empty?
+
+	return log
+end
+
+
+### Create a changelog from the subversion log of the specified +dir+ and return it.
+def make_svn_changelog( dir='.' )
+	require 'xml/libxml'
+
+	changelog = ''
+	path_prefix = '/' + get_svn_path( dir ) + '/'
+
+	xmllog = make_xml_svn_log( dir, 0 )
+	trace "XML Log: #{xmllog}"
+
+	parser = XML::Parser.string( xmllog )
+	root = parser.parse.root
+	root.find( '//log/logentry' ).to_a.reverse.each do |entry|
+		trace "Making a changelog entry for r%s" % [ entry['revision'] ]
+
+		added   = []
+		deleted = []
+		changed = []
+
+		entry.find( 'paths/path').each do |path|
+			pathname = path.content
+			pathname.sub!( path_prefix , '' ) if pathname.count('/') > 1
+
+			case path['action']
+			when 'A', 'R'
+				if path['copyfrom-path']
+					verb = path['action'] == 'A' ? 'renamed' : 'copied'
+					added << "%s\n#{FILE_INDENT}-> #{verb} from %s@r%s" % [
+						pathname,
+						path['copyfrom-path'],
+						path['copyfrom-rev'],
+					]
+				else
+					added << "%s (new)" % [ pathname ]
+				end
+			
+			when 'M'
+				changed << pathname
+			
+			when 'D'
+				deleted << pathname
+			
+			else
+				log "Unknown action %p in rev %d" % [ path['action'], entry['revision'] ]
+			end
+		
+		end
+
+		date = Time.parse( entry.find_first('date').content )
+		author = entry.find_first( 'author' ).content
+		msg = entry.find_first( 'msg' ).content
+		rev = entry['revision']
+
+		changelog << "-- #{date.rfc2822} by #{author} (r#{rev}) -----\n"
+		changelog << "   Added:   " << humanize_file_list(added)   << "\n" unless added.empty?
+		changelog << "   Changed: " << humanize_file_list(changed) << "\n" unless changed.empty?
+		changelog << "   Deleted: " << humanize_file_list(deleted) << "\n" unless deleted.empty?
+		changelog << "\n"
+		
+		indent = msg[/^(\s*)/] + LOG_INDENT
+		
+		changelog << indent << msg.strip.gsub(/\n\s*/m, "\n#{indent}")
+		changelog << "\n\n\n"
+	end
+	
+	return changelog
+end
+
+
+### Returns a human-scannable file list by joining and truncating the list if it's too long.
+def humanize_file_list( list )
+	listtext = list[0..5].join( "\n#{FILE_INDENT}" )
+	if list.length > 5
+		listtext << " (and %d other/s)" % [ list.length - 5 ]
+	end
+	
+	return listtext
+end
+	
 
 
 ###
