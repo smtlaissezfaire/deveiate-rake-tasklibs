@@ -80,6 +80,10 @@ SVN_RELEASES_DIR = 'releases'
 SVN_BRANCHES_DIR = 'branches'
 SVN_TAGS_DIR     = 'tags'
 
+SVN_DOTDIR       = BASEDIR + '.svn'
+SVN_ENTRIES      = SVN_DOTDIR + 'entries'
+
+
 ### Load some task libraries that need to be loaded early
 require RAKE_TASKDIR + 'helpers.rb'
 require RAKE_TASKDIR + 'svn.rb'
@@ -202,8 +206,13 @@ task :default  => [:clean, :spec, :rdoc, :package]
 CLEAN.include 'coverage'
 CLOBBER.include 'artifacts', 'coverage.info', PKGDIR
 
+# Target to hinge on ChangeLog updates
+file SVN_ENTRIES
+
 ### Task: changelog
-file 'ChangeLog' do |task|
+file 'ChangeLog' => SVN_ENTRIES.to_s do |task|
+	log "Updating #{task.name}"
+
 	changelog = make_svn_changelog()
 	trace "SVN changelog is: %p" % [ changelog ]
 	File.open( task.name, 'w' ) do |fh|

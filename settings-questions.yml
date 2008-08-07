@@ -5,7 +5,7 @@
     prompt: URL of project page
     validator: URI.parse( args.first )
     stringify: true
-- project_synopsis: Project synopsis
+- project_summary: Project summary
 - project_description:
     prompt: Project description
     multiline: true
