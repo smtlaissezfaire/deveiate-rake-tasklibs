@@ -214,7 +214,6 @@ file 'ChangeLog' => SVN_ENTRIES.to_s do |task|
 	log "Updating #{task.name}"
 
 	changelog = make_svn_changelog()
-	trace "SVN changelog is: %p" % [ changelog ]
 	File.open( task.name, 'w' ) do |fh|
 		fh.print( changelog )
 	end

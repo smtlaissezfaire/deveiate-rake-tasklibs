@@ -212,7 +212,6 @@ def make_svn_changelog( dir='.' )
 	path_prefix = '/' + get_svn_path( dir ) + '/'
 
 	xmllog = make_xml_svn_log( dir, 0 )
-	trace "XML Log: #{xmllog}"
 
 	parser = XML::Parser.string( xmllog )
 	root = parser.parse.root
