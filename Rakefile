@@ -38,8 +38,6 @@ PKG_VERSION   = VERSION_FILE.read[ /VERSION = '(\d+\.\d+\.\d+)'/, 1 ]
 PKG_FILE_NAME = "#{PKG_NAME.downcase}-#{PKG_VERSION}"
 GEM_FILE_NAME = "#{PKG_FILE_NAME}.gem"
 
-RELEASE_NAME  = "RELEASE_#{PKG_VERSION.gsub(/\./, '_')}"
-
 # Subversion constants -- directory names for releases and tags
 SVN_TRUNK_DIR    = 'trunk'
 SVN_RELEASES_DIR = 'releases'

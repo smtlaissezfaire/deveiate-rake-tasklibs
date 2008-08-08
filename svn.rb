@@ -292,7 +292,7 @@ end
 desc "Subversion tasks"
 namespace :svn do
 
-	desc "Copy the HEAD revision of the current trunk/ to tags/ with a " +
+	desc "Copy the HEAD revision of the current #{SVN_TRUNK_DIR}/ to #{SVN_TAGS_DIR}/ with a " +
 		 "current timestamp."
 	task :tag do
 		svninfo   = get_svn_info()
@@ -309,19 +309,19 @@ namespace :svn do
 	end
 
 
-	desc "Copy the most recent tag to tags/#{PKG_VERSION}"
+	desc "Copy the most recent tag to #{SVN_RELEASES_DIR}/#{PKG_VERSION}"
 	task :release do
 		last_tag    = get_latest_svn_timestamp_tag()
 		svninfo     = get_svn_info()
 		svntrunk    = svninfo['Repository Root'] + "/#{SVN_TRUNK_DIR}"
-		svnrel      = svninfo['Repository Root'] + "/#{SVN_TAGS_DIR}"
-		release     = RELEASE_NAME
+		svnrel      = svninfo['Repository Root'] + "/#{SVN_RELEASES_DIR}"
+		release     = PKG_VERSION
 		svnrelease  = svnrel + '/' + release
 
 		releases = svn_ls( svnrel ).collect {|name| name.sub(%r{/$}, '') }
 		trace "Releases: %p" % [releases]
 		if releases.include?( release )
-			error "Version #{release} already has a branch (#{svnrelease}). Did you mean" +
+			error "Version #{release} already has a branch (#{svnrelease}). Did you mean " +
 				"to increment the version in #{VERSION_FILE}?"
 			fail
 		else

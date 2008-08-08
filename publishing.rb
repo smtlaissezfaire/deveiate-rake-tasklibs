@@ -9,6 +9,8 @@ require 'net/smtp'
 require 'net/protocol'
 require 'openssl'
 
+$publish_privately = false
+
 ### Add SSL to Net::SMTP
 class Net::SMTP
 	def ssl_start( helo='localhost.localdomain', user=nil, secret=nil, authtype=nil )
@@ -99,14 +101,22 @@ begin
 
 	namespace :release do
 		task :default => [ 'svn:release', :publish, :announce, :project ]
+		task :test do
+			$publish_privately = true
+		end
 		task :test => [ 'svn:release', :publish, :announce, :project ]
+		
+		desc "Re-publish the release with the current version number"
+		task :rerelease => [ :publish, :announce, :project ]
+
 
 		desc "Generate the release notes"
 		task :notes => [RELEASE_NOTES_FILE]
 		file RELEASE_NOTES_FILE do |task|
-			last_rel_tag = get_latest_release_tag()
+			last_rel_tag = get_latest_release_tag() or
+				fail ">>> No releases tagged! Try running 'rake svn:release' first"
 			trace "Last release tag is: %p" % [ last_rel_tag ]
-			start = get_last_changed_rev( last_rel_tag )
+			start = get_last_changed_rev( last_rel_tag ) || 1
 			trace "Starting rev is: %p" % [ start ]
 			log_output = make_svn_log( '.', start, 'HEAD' )
 
@@ -173,11 +183,14 @@ begin
 		desc 'Send out a release announcement'
 		task :announce => [RELEASE_ANNOUNCE_FILE] do
 			email         = TMail::Mail.new
-			if $trace
+			if $publish_privately
+				trace "Sending private announce mail"
 				email.to      = 'rubymage@gmail.com'
 			else
-				email.to      = 'Ruby-Talk List <ruby-talk@ruby-lang.org>'
-				email.bcc     = 'rubymage@gmail.com'
+				trace "Sending public announce mail"
+				email.to      = 'rubymage@gmail.com'
+				# email.to      = 'Ruby-Talk List <ruby-talk@ruby-lang.org>'
+				# email.bcc     = 'rubymage@gmail.com'
 			end
 			email.from    = GEMSPEC.email
 			email.subject = "[ANN] #{PKG_NAME} #{PKG_VERSION}"
