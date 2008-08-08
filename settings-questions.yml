@@ -23,3 +23,5 @@
     multiline: true
     post-process: "Hash[ *(args.collect {|line| line.split(/:\s*/, 2) }.flatten) ]"
 
+- rubyforge_group: Rubyforge Group
+- rubyforge_project: Rubyforge Project Name

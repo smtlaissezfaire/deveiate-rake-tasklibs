@@ -116,6 +116,10 @@ PROJECT_PUBDIR = "/usr/local/www/public/code"
 PROJECT_DOCDIR = "#{PROJECT_PUBDIR}/#{PKG_NAME}"
 PROJECT_SCPURL = "#{PROJECT_HOST}:#{PROJECT_DOCDIR}"
 
+# Rubyforge stuff
+RUBYFORGE_GROUP = '<%= settings['rubyforge_group'] %>'
+RUBYFORGE_PROJECT = '<%= settings['rubyforge_project'] %>'
+
 # Gem dependencies: gemname => version
 DEPENDENCIES = {
 <%	settings['project_dependencies'] ||= {} %>
@@ -147,7 +151,7 @@ GEMSPEC   = Gem::Specification.new do |gem|
 	gem.authors           = '<%= settings['author_name'] %>'
 	gem.email             = '<%= settings['author_email'] %>'
 	gem.homepage          = '<%= settings['project_homepage'] %>'
-	gem.rubyforge_project = 'deveiate'
+	gem.rubyforge_project = RUBYFORGE_PROJECT
 
 	gem.has_rdoc          = true
 	gem.rdoc_options      = RDOC_OPTIONS

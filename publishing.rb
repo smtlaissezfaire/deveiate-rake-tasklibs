@@ -101,14 +101,15 @@ begin
 
 	namespace :release do
 		task :default => [ 'svn:release', :publish, :announce, :project ]
-		task :test do
-			$publish_privately = true
-		end
-		task :test => [ 'svn:release', :publish, :announce, :project ]
-		
+
 		desc "Re-publish the release with the current version number"
 		task :rerelease => [ :publish, :announce, :project ]
 
+		task :test do
+			$publish_privately = true
+		end
+		task :test => [ :rerelease ]
+		
 
 		desc "Generate the release notes"
 		task :notes => [RELEASE_NOTES_FILE]
@@ -126,6 +127,7 @@ begin
 
 			edit task.name
 		end
+		CLEAN.include( RELEASE_NOTES_FILE )
 		
 		
 		task :project => [ :rdoc ] do
@@ -135,9 +137,9 @@ begin
 			end
 			when_writing( "Uploading packages") do
 				pkgs = Pathname.glob( PKGDIR + "#{PKG_FILE_NAME}.{gem,tar.gz,tar.bz2,zip}" )
-				log "Uploading %d packages to #{PROJECT_PUBURL}" % [ pkgs.length ]
+				log "Uploading %d packages to #{PROJECT_SCPURL}" % [ pkgs.length ]
 				pkgs.each do |pkgfile|
-					run 'scp', '-qC', pkgfile, PROJECT_PUBURL
+					run 'scp', '-qC', pkgfile, PROJECT_SCPURL
                 end
             end
 		end
@@ -178,6 +180,7 @@ begin
 
 			edit task.name
 		end
+		CLEAN.include( RELEASE_ANNOUNCE_FILE )
 		
 		
 		desc 'Send out a release announcement'
@@ -230,33 +233,53 @@ begin
 			project = GEMSPEC.rubyforge_project
 
 			rf = RubyForge.new
-			log 'Logging in to RubyForge'
+			log "Loading RubyForge config"
+			rf.configure
+
+			group_id = rf.autoconfig['group_ids'][RUBYFORGE_GROUP] or
+				fail "Your configuration doesn't have a group id for '#{RUBYFORGE_GROUP}'"
+
+			# If this project doesn't yet exist, create it
+			unless rf.autoconfig['package_ids'].key?( project )
+				ask_for_confirmation( "Package '#{project}' doesn't exist on RubyForge. Create it?" ) do
+					log "Creating new package '#{project}'"
+					rf.create_package( group_id, project )
+				end
+			end
+			
+			package_id = rf.autoconfig['package_ids'][ project ]
      
 			# Make sure this release doesn't already exist
 			releases = rf.autoconfig['release_ids']
 			if releases.key?( GEMSPEC.name ) && releases[ GEMSPEC.name ].key?( PKG_VERSION )
-				fail "Rubyforge seems to already have #{ PKG_FILE_NAME }"
-			end
+				log "Rubyforge seems to already have #{ PKG_FILE_NAME }"
+			else
+				config = rf.userconfig or
+					fail "You apparently haven't set up your RubyForge credentials on this machine."
+				config['release_notes'] = GEMSPEC.description
+				config['release_changes'] = File.read( RELEASE_NOTES_FILE )
+				config['preformatted'] = true
 
-			config = rf.userconfig
-			config['release_notes'] = GEMSPEC.description
-			config['release_changes'] = File.read( RELEASE_NOTES_FILE )
-			config['preformatted'] = true
+				files = FileList[ PKGDIR + GEM_FILE_NAME ]
+				files.include PKGDIR + "#{PKG_FILE_NAME}.tar.gz"
+				files.include PKGDIR + "#{PKG_FILE_NAME}.tar.bz2"
+				files.include PKGDIR + "#{PKG_FILE_NAME}.zip"
 
-			files = FileList[ PKGDIR + GEM_FILE_NAME ]
-			files.include PKGDIR + "#{PKG_FILE_NAME}.tar.gz"
-			files.include PKGDIR + "#{PKG_FILE_NAME}.tar.bz2"
-			files.include PKGDIR + "#{PKG_FILE_NAME}.zip"
+				log "Releasing #{PKG_FILE_NAME}"
+				when_writing do
+					log "Publishing to RubyForge: \n",
+						"\tproject: #{RUBYFORGE_GROUP}\n",
+						"\tpackage: #{PKG_NAME.downcase}\n",
+						"\tpackage version: #{PKG_VERSION}\n",
+						"\tfiles: " + files.collect {|f| f.to_s }.join(', ') + "\n"
 
-			log "Releasing #{PKG_FILE_NAME}"
-			when_writing do
-				log "Publishing to RubyForge: \n",
-					"\tproject: #{project}\n",
-					"\tpackage: #{PKG_NAME.downcase}\n",
-					"\tpackage version: #{PKG_VERSION}\n",
-					"\tfiles: " + files.collect {|f| f.to_s }.join(', ') + "\n"
-				rf.login
-				rf.add_release( project, PKG_NAME.downcase, PKG_VERSION, *files )
+					ask_for_confirmation( "Publish to RubyForge?" ) do
+						log 'Logging in...'
+						rf.login
+						log "Adding the new release to the '#{project}' project"
+						rf.add_release( group_id, package_id, PKG_VERSION, *files )
+					end
+				end
 			end
 		end
 	end

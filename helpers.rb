@@ -279,6 +279,38 @@ def prompt_for_multiple_values( label, default=nil )
 end
 
 
+### Turn echo and masking of input on/off. Based on similar code in
+### Ruby-Password by Ian Macdonald <ian@caliban.org>.
+def noecho( masked=false )
+	require 'termios'
+
+	rval = nil
+	term = Termios.getattr( $stdin )
+
+	begin
+		term.c_lflag &= ~Termios::ECHO
+		term.c_lflag &= ~Termios::ICANON if masked
+
+		rval = yield
+	ensure
+		term.c_lflag |= ( Termios::ECHO | Termios::ICANON )
+		Termios.setattr( $stdin, Termios::TCSANOW, term )
+	end
+	
+	return rval
+end
+
+
+### Prompt the user for her password, turning off echo if the 'termios' module is
+### available.
+def prompt_for_password( prompt="Password: " )
+	return noecho( true ) do
+		$stderr.print( prompt )
+		($stdin.gets || '').chomp
+	end
+end
+
+
 ### Display a description of a potentially-dangerous task, and prompt
 ### for confirmation. If the user answers with anything that begins
 ### with 'y', yield to the block, else raise with an error.
