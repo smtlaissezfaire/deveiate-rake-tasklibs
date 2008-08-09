@@ -65,9 +65,6 @@ task :default do
 	end
 end
 
-# Stub out the coverage verification task, as there aren't currently any tests
-namespace :coverage do
-	task :verify
-end
-
+# Stub out the testing task, as there aren't currently any tests
+task :test
 

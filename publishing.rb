@@ -258,7 +258,6 @@ begin
 					fail "You apparently haven't set up your RubyForge credentials on this machine."
 				config['release_notes'] = GEMSPEC.description
 				config['release_changes'] = File.read( RELEASE_NOTES_FILE )
-				config['preformatted'] = true
 
 				files = FileList[ PKGDIR + GEM_FILE_NAME ]
 				files.include PKGDIR + "#{PKG_FILE_NAME}.tar.gz"

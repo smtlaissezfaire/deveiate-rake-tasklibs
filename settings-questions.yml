@@ -17,11 +17,28 @@
 - project_dependencies:
     prompt: "Project dependencies (<gemname>: <gem_version_spec>)"
     multiline: true
-    post-process: "Hash[ *(args.collect {|line| line.split(/:\s*/, 2) }.flatten) ]"
+    post-process: |-
+        pairs = args.collect {|line|
+            line.is_a?( Hash ) ?
+                line :
+                line.split(/:\s*/, 2)
+        }.flatten
+        Hash[ *pairs ]
+                
 - project_requirements:
     prompt: "Project requirements (<software>: <version>)"
     multiline: true
-    post-process: "Hash[ *(args.collect {|line| line.split(/:\s*/, 2) }.flatten) ]"
+    post-process: |-
+        pairs = args.collect {|line|
+            line.is_a?( Hash ) ?
+                line :
+                line.split(/:\s*/, 2)
+        }.flatten
+        Hash[ *pairs ]
 
 - rubyforge_group: Rubyforge Group
 - rubyforge_project: Rubyforge Project Name
+
+- additional_pkgfiles:
+    multiline: true
+    prompt: Additional files to add to the distribution (globs work)
