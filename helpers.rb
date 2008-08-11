@@ -108,7 +108,7 @@ def download( sourceuri, targetfile=nil )
 	log "Downloading %s to %s" % [sourceuri, targetfile]
 	targetpath.open( File::WRONLY|File::TRUNC|File::CREAT, 0644 ) do |ofh|
 	
-		url = URI.parse( sourceuri )
+		url = sourceuri.is_a?( URI ) ? sourceuri : URI.parse( sourceuri )
 		downloaded = false
 		limit = 5
 		

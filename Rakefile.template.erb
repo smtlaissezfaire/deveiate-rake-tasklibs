@@ -213,7 +213,10 @@ import LOCAL_RAKEFILE if LOCAL_RAKEFILE.exist?
 #####################################################################
 
 ### Default task
-task :default  => [:clean, :spec, :rdoc, :package]
+task :default  => [:clean, :local, :spec, :rdoc, :package]
+
+### Task the local Rakefile can append to -- no-op by default
+task :local
 
 
 ### Task: clean
