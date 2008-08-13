@@ -157,7 +157,7 @@ GEMSPEC   = Gem::Specification.new do |gem|
 	gem.summary           = PKG_SUMMARY
 	gem.description       = <<-EOD
 <% for line in settings['project_description'] %>
-	<%= line %>
+	<%= line.chomp %>
 <% end %>
 	EOD
 
