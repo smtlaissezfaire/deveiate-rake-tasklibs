@@ -21,7 +21,7 @@ rescue LoadError => err
 end
 
 Rake::RDocTask.new do |rdoc|
-	rdoc.rdoc_dir = 'docs'
+	rdoc.rdoc_dir = 'docs/html'
 	rdoc.title    = "#{PKG_NAME} - #{PKG_SUMMARY}"
 	rdoc.options += RDOC_OPTIONS + [ '-f', 'darkfish' ] if $have_darkfish
 
