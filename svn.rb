@@ -253,7 +253,13 @@ def make_svn_changelog( dir='.' )
 		end
 
 		date = Time.parse( entry.find_first('date').content )
-		author = entry.find_first( 'author' ).content
+
+		# cvs2svn doesn't set 'author'
+		author = 'unknown'
+		if entry.find_first( 'author' )
+			author = entry.find_first( 'author' ).content
+		end
+		              
 		msg = entry.find_first( 'msg' ).content
 		rev = entry['revision']
 
@@ -313,10 +319,24 @@ namespace :svn do
 	task :release do
 		last_tag    = get_latest_svn_timestamp_tag()
 		svninfo     = get_svn_info()
-		svntrunk    = svninfo['Repository Root'] + "/#{SVN_TRUNK_DIR}"
-		svnrel      = svninfo['Repository Root'] + "/#{SVN_RELEASES_DIR}"
+		svnroot     = svninfo['Repository Root']
+		svntrunk    = svnroot + "/#{SVN_TRUNK_DIR}"
+		svnrel      = svnroot + "/#{SVN_RELEASES_DIR}"
 		release     = PKG_VERSION
 		svnrelease  = svnrel + '/' + release
+
+		topdirs = svn_ls( svnroot ).collect {|dir| dir.chomp('/') }
+		unless topdirs.include?( SVN_RELEASES_DIR )
+			trace "Top directories (%p) does not include %p" %
+				[ topdirs, SVN_RELEASES_DIR ]
+			log "Releases path #{svnrel} does not exist."
+			ask_for_confirmation( "To continue I'll need to create it." ) do
+				run 'svn', 'mkdir', svnrel, '-m', 'Creating releases/ directory'
+			end
+		else
+			trace "Found release dir #{SVN_RELEASES_DIR} in the top directories %p" %
+				[ topdirs ]
+		end
 
 		releases = svn_ls( svnrel ).collect {|name| name.sub(%r{/$}, '') }
 		trace "Releases: %p" % [releases]
