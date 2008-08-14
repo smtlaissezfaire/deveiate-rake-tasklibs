@@ -20,7 +20,7 @@ RELEASE_VERSION_PATTERN = /\d+\.\d+\.\d+/
 DEFAULT_EDITOR = 'vi'
 DEFAULT_KEYWORDS = %w[Date Rev Author URL Id]
 KEYWORDED_FILEDIRS = %w[applets bin etc lib misc]
-KEYWORDED_FILEPATTERN = /^(?:Rakefile|.*\.(?:rb|js|html|template))$/i
+KEYWORDED_FILEPATTERN = /^(?:Rakefile.*|Metarakefile|.*\.(?:rb|js|html|template))$/i
 
 COMMIT_MSG_FILE = 'commit-msg.txt'
 
