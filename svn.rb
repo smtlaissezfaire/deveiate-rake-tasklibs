@@ -19,8 +19,15 @@ RELEASE_VERSION_PATTERN = /\d+\.\d+\.\d+/
 
 DEFAULT_EDITOR = 'vi'
 DEFAULT_KEYWORDS = %w[Date Rev Author URL Id]
-KEYWORDED_FILEDIRS = %w[applets bin etc lib misc]
-KEYWORDED_FILEPATTERN = /^(?:Rakefile.*|Metarakefile|.*\.(?:rb|js|html|template))$/i
+KEYWORDED_FILEDIRS = %w[applets spec bin etc ext experiments examples lib misc docs]
+KEYWORDED_FILEPATTERN = /
+	^(?:
+		(?:meta)?rakefile.*							# Rakefiles
+		|
+		.*\.(?:rb|c|h|js|html|css|template|erb)		# Source file extensions
+		|
+		readme|install|todo
+	)$/ix
 
 COMMIT_MSG_FILE = 'commit-msg.txt'
 
