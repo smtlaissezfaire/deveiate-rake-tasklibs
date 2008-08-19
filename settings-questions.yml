@@ -42,3 +42,6 @@
 - additional_pkgfiles:
     multiline: true
     prompt: Additional files to add to the distribution (globs work)
+
+- version_file:
+    prompt: File to read the project version from, relative to the lib/ directory.
