@@ -27,4 +27,5 @@ Rake::RDocTask.new do |rdoc|
 
 	rdoc.rdoc_files.include 'README'
 	rdoc.rdoc_files.include LIB_FILES.collect {|f| f.to_s }
+	rdoc.rdoc_files.include EXT_FILES.collect {|f| f.to_s }
 end
