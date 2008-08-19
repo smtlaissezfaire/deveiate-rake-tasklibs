@@ -133,7 +133,7 @@ begin
 		task :project => [ :rdoc ] do
 			when_writing( "Publishing docs to #{PROJECT_SCPDOCURL}" ) do
 				run 'ssh', PROJECT_HOST, "rm -rf #{PROJECT_SCPDOCURL}"
-				run 'scp', '-qCr', 'docs', PROJECT_SCPDOCURL
+				run 'scp', '-qCr', 'docs/html', PROJECT_SCPDOCURL
 			end
 			when_writing( "Uploading packages") do
 				pkgs = Pathname.glob( PKGDIR + "#{PKG_FILE_NAME}.{gem,tar.gz,tar.bz2,zip}" )
