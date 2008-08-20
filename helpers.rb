@@ -279,8 +279,7 @@ def prompt_for_multiple_values( label, default=nil )
 end
 
 
-### Turn echo and masking of input on/off. Based on similar code in
-### Ruby-Password by Ian Macdonald <ian@caliban.org>.
+### Turn echo and masking of input on/off. 
 def noecho( masked=false )
 	require 'termios'
 
@@ -288,13 +287,15 @@ def noecho( masked=false )
 	term = Termios.getattr( $stdin )
 
 	begin
-		term.c_lflag &= ~Termios::ECHO
-		term.c_lflag &= ~Termios::ICANON if masked
+		newt = term.dup
+		newt.c_lflag &= ~Termios::ECHO
+		newt.c_lflag &= ~Termios::ICANON if masked
+
+		Termios.tcsetattr( $stdin, Termios::TCSANOW, newt )
 
 		rval = yield
 	ensure
-		term.c_lflag |= ( Termios::ECHO | Termios::ICANON )
-		Termios.setattr( $stdin, Termios::TCSANOW, term )
+		Termios.tcsetattr( $stdin, Termios::TCSANOW, term )
 	end
 	
 	return rval

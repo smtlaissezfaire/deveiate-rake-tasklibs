@@ -106,9 +106,10 @@ begin
 		task :rerelease => [ :publish, :announce, :project ]
 
 		task :test do
+			trace "Will publish privately"
 			$publish_privately = true
+			Rake::Task['release:rerelease'].invoke
 		end
-		task :test => [ :rerelease ]
 		
 
 		desc "Generate the release notes"
@@ -127,12 +128,12 @@ begin
 
 			edit task.name
 		end
-		CLEAN.include( RELEASE_NOTES_FILE )
+		CLOBBER.include( RELEASE_NOTES_FILE )
 		
 		
 		task :project => [ :rdoc ] do
 			when_writing( "Publishing docs to #{PROJECT_SCPDOCURL}" ) do
-				run 'ssh', PROJECT_HOST, "rm -rf #{PROJECT_SCPDOCURL}"
+				run 'ssh', PROJECT_HOST, "rm -rf #{PROJECT_DOCDIR}"
 				run 'scp', '-qCr', 'docs/html', PROJECT_SCPDOCURL
 			end
 			when_writing( "Uploading packages") do
@@ -180,7 +181,7 @@ begin
 
 			edit task.name
 		end
-		CLEAN.include( RELEASE_ANNOUNCE_FILE )
+		CLOBBER.include( RELEASE_ANNOUNCE_FILE )
 		
 		
 		desc 'Send out a release announcement'
@@ -188,12 +189,11 @@ begin
 			email         = TMail::Mail.new
 			if $publish_privately
 				trace "Sending private announce mail"
-				email.to      = 'rubymage@gmail.com'
+				email.to = 'rubymage@gmail.com'
 			else
 				trace "Sending public announce mail"
-				email.to      = 'rubymage@gmail.com'
-				# email.to      = 'Ruby-Talk List <ruby-talk@ruby-lang.org>'
-				# email.bcc     = 'rubymage@gmail.com'
+				email.to  = 'Ruby-Talk List <ruby-talk@ruby-lang.org>'
+				email.bcc = 'rubymage@gmail.com'
 			end
 			email.from    = GEMSPEC.email
 			email.subject = "[ANN] #{PKG_NAME} #{PKG_VERSION}"

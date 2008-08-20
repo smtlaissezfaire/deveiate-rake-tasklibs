@@ -10,6 +10,7 @@
 require 'pp'
 require 'yaml'
 require 'date'
+require 'time'
 
 # Strftime format for tags/releases
 TAG_TIMESTAMP_FORMAT = '%Y%m%d-%H%M%S'
