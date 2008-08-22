@@ -150,7 +150,8 @@ begin
 		desc "Show differences in coverage from last run"
 		Spec::Rake::SpecTask.new( :diff ) do |task|
 			task.spec_files = SPEC_FILES
-			task.rcov_opts = ['--text-coverage-diff']
+			task.spec_opts = ['-f', 'p', '-b']
+			task.rcov_opts = RCOV_OPTS - ['--save'] + ['--text-coverage-diff']
 			task.rcov = true
 		end
 
