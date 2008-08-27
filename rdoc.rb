@@ -6,6 +6,10 @@
 require 'rake/rdoctask'
 $have_darkfish = false
 
+# Append docs/lib to the load path if it exists for a locally-installed Darkfish
+DOCSLIB = DOCSDIR + 'lib'
+$LOAD_PATH.unshift( DOCSLIB.to_s ) if DOCSLIB.exist?
+
 begin
 	require 'darkfish-rdoc'
 	$have_darkfish = true
@@ -21,7 +25,7 @@ rescue LoadError => err
 end
 
 Rake::RDocTask.new do |rdoc|
-	rdoc.rdoc_dir = 'docs/html'
+	rdoc.rdoc_dir = RDOCDIR.expand_path.relative_path_from( Pathname.pwd ).to_s
 	rdoc.title    = "#{PKG_NAME} - #{PKG_SUMMARY}"
 	rdoc.options += RDOC_OPTIONS + [ '-f', 'darkfish' ] if $have_darkfish
 

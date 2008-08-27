@@ -330,6 +330,7 @@ def ask_for_confirmation( description )
 		fail
 	end
 end
+alias :prompt_for_confirmation :ask_for_confirmation
 
 
 ### Search line-by-line in the specified +file+ for the given +regexp+, returning the
