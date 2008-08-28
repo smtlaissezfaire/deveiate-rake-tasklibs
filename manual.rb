@@ -466,7 +466,10 @@ module Manual
 		### Process the given +source+ as Textile and return the resulting HTML
 		### fragment.
 		def process( source, *ignored )
-			return RedCloth.new( source ).to_html
+			formatter = RedCloth::TextileDoc.new( source )
+			formatter.hard_breaks = false
+			formatter.no_span_caps = true
+			return formatter.to_html
 		end
 
 	end
