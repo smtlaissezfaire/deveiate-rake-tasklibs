@@ -55,8 +55,15 @@ def install_gems( *gems )
 end
 
 
-### Task: install gems for development tasks
+### Task: install runtime dependencies
+desc "Install runtime dependencies as gems"
 task :install_dependencies do
 	install_gems( DEPENDENCIES.keys )
+end
+
+### Task: install gems for development tasks
+desc "Install development dependencies as gems"
+task :install_dev_dependencies do
+	install_gems( DEVELOPMENT_DEPENDENCIES.keys )
 end
 

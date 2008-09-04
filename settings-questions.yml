@@ -15,7 +15,18 @@
 - author_email: Your email address
 
 - project_dependencies:
-    prompt: "Project dependencies (<gemname>: <gem_version_spec>)"
+    prompt: "Runtime dependencies (<gemname>: <gem_version_spec>)"
+    multiline: true
+    post-process: |-
+        pairs = args.collect {|line|
+            line.is_a?( Hash ) ?
+                line :
+                line.split(/:\s*/, 2)
+        }.flatten
+        Hash[ *pairs ]
+                
+- dev_dependencies:
+    prompt: "Development dependencies (<gemname>: <gem_version_spec>)"
     multiline: true
     post-process: |-
         pairs = args.collect {|line|
