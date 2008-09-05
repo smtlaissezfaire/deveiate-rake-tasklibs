@@ -101,7 +101,10 @@ end
 
 
 ### Return the keywords for the specified array of +files+ as a Hash keyed by filename.
-def get_svn_keyword_map( files )
+def get_svn_keyword_map( *files )
+	files.flatten!
+	files.push( '.' ) if files.empty?
+
 	cmd = ['svn', 'pg', 'svn:keywords', *files]
 
 	# trace "Executing: svn pg svn:keywords " + files.join(' ')
@@ -165,6 +168,22 @@ def get_svn_diff( *targets )
 	log = IO.read( '|-' ) or exec 'svn', 'diff', *(targets.flatten)
 
 	return log
+end
+
+
+### Get a subversion status as an Array of tuples of the form:
+###   [ <status>, <path> ]
+def get_svn_status( *targets )
+	targets << BASEDIR if targets.empty?
+	trace "Getting svn status for targets: %p" % [targets]
+	status = IO.read( '|-' ) or exec 'svn', 'st', *(targets.flatten)
+	entries = status.split( /\n/ ).
+		collect do |line|
+			flag, path = line.strip.split( /\s+/, 2 )
+			[ flag, Pathname.new(path) ]
+		end
+
+	return entries
 end
 
 
@@ -399,8 +418,40 @@ namespace :svn do
 	end
 
 
+	desc "Add/ignore any files that are unknown in the working copy"
+	task :newfiles do
+		log "Checking for new files..."
+		entries = get_svn_status()
+		
+		unless entries.empty?
+			files_to_add = []
+			files_to_ignore = []
+
+			entries.find_all {|entry| entry[0] == '?'}.each do |entry|
+				action = prompt_with_default( "  #{entry[1]}: (a)dd, (i)gnore, (s)kip", 's' )
+				case action
+				when 'a'
+					files_to_add << entry[1]
+				when 'i'
+					files_to_ignore << entry[1]
+				end
+			end
+			
+			unless files_to_add.empty?
+				run 'svn', 'add', *files_to_add
+			end
+		
+			unless files_to_ignore.empty?
+				abort "Ignoring not yet implemented"
+			end
+		
+		end
+	end
+	task :add => :newfiles
+	
+
 	desc "Check in all the changes in your current working copy"
-	task :checkin => ['svn:update', 'test', 'svn:fix_keywords', COMMIT_MSG_FILE] do
+	task :checkin => ['svn:update', 'svn:newfiles', 'test', 'svn:fix_keywords', COMMIT_MSG_FILE] do
 		targets = get_target_args()
 		$deferr.puts '---', File.read( COMMIT_MSG_FILE ), '---'
 		ask_for_confirmation( "Continue with checkin?" ) do
@@ -450,13 +501,19 @@ namespace :svn do
 	
 	task :debug_helpers do
 		methods = [
-			:make_new_tag,
-			:get_svn_info,
-			:get_svn_repo_root,
-			:get_svn_url,
-			:get_svn_path,
-			:svn_ls,
+			:get_last_changed_rev,
+			:get_latest_release_tag,
 			:get_latest_svn_timestamp_tag,
+			:get_svn_diff,
+			:get_svn_filelist,
+			:get_svn_info,
+			:get_svn_keyword_map,
+			:get_svn_path,
+			:get_svn_repo_root,
+			:get_svn_rev,
+			:get_svn_status,
+			:get_svn_url,
+			:svn_ls,
 		]
 		maxlen = methods.collect {|sym| sym.to_s.length }.max
 		

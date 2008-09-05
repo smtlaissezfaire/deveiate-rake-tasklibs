@@ -19,9 +19,12 @@
     multiline: true
     post-process: |-
         pairs = args.collect {|line|
-            line.is_a?( Hash ) ?
-                line :
-                line.split(/:\s*/, 2)
+            if line.is_a?( Hash )
+                line
+            else
+                gem, version = line.split(/:\s*/, 2)
+                [gem, version||'>=0']
+            end
         }.flatten
         Hash[ *pairs ]
                 
@@ -30,9 +33,12 @@
     multiline: true
     post-process: |-
         pairs = args.collect {|line|
-            line.is_a?( Hash ) ?
-                line :
-                line.split(/:\s*/, 2)
+            if line.is_a?( Hash )
+                line
+            else
+                gem, version = line.split(/:\s*/, 2)
+                [gem, version||'>=0']
+            end
         }.flatten
         Hash[ *pairs ]
                 
@@ -41,9 +47,12 @@
     multiline: true
     post-process: |-
         pairs = args.collect {|line|
-            line.is_a?( Hash ) ?
-                line :
-                line.split(/:\s*/, 2)
+            if line.is_a?( Hash )
+                line
+            else
+                gem, version = line.split(/:\s*/, 2)
+                [gem, version||'>=0']
+            end
         }.flatten
         Hash[ *pairs ]
 

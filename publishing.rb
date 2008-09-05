@@ -134,7 +134,7 @@ begin
 		task :project => [ :rdoc ] do
 			when_writing( "Publishing docs to #{PROJECT_SCPDOCURL}" ) do
 				run 'ssh', PROJECT_HOST, "rm -rf #{PROJECT_DOCDIR}"
-				run 'scp', '-qCr', 'docs/html', PROJECT_SCPDOCURL
+				run 'scp', '-qCr', RDOCDIR, PROJECT_SCPDOCURL
 			end
 			when_writing( "Uploading packages") do
 				pkgs = Pathname.glob( PKGDIR + "#{PKG_FILE_NAME}.{gem,tar.gz,tar.bz2,zip}" )
@@ -229,7 +229,7 @@ begin
 		
 	
 		desc 'Publish the new release to RubyForge'
-		task :publish => [:clobber, :package, :notes] do |task|
+		task :publish => [:clean, :package, :notes] do |task|
 			project = GEMSPEC.rubyforge_project
 
 			rf = RubyForge.new
