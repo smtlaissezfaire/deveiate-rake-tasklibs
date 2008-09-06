@@ -176,7 +176,7 @@ end
 def get_svn_status( *targets )
 	targets << BASEDIR if targets.empty?
 	trace "Getting svn status for targets: %p" % [targets]
-	status = IO.read( '|-' ) or exec 'svn', 'st', *(targets.flatten)
+	status = IO.read( '|-' ) or exec 'svn', 'st', '--ignore-externals', *(targets.flatten)
 	entries = status.split( /\n/ ).
 		collect do |line|
 			flag, path = line.strip.split( /\s+/, 2 )
