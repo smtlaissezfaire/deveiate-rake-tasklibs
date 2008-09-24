@@ -105,6 +105,7 @@ begin
 		desc "Re-publish the release with the current version number"
 		task :rerelease => [ :publish, :announce, :project ]
 
+		desc "Re-run the publication tasks, but send notifications to debugging address"
 		task :test do
 			trace "Will publish privately"
 			$publish_privately = true
@@ -131,6 +132,7 @@ begin
 		CLOBBER.include( RELEASE_NOTES_FILE )
 		
 		
+		desc "Publish the project documentation to #{PROJECT_HOST}"
 		task :project => [ :rdoc ] do
 			when_writing( "Publishing docs to #{PROJECT_SCPDOCURL}" ) do
 				run 'ssh', PROJECT_HOST, "rm -rf #{PROJECT_DOCDIR}"
@@ -299,5 +301,6 @@ rescue LoadError => err
 	task "release:notes" => :no_release_tasks
 end
 
+desc "Package up a release, publish it, and send out notifications"
 task :release => 'release:default'
 
