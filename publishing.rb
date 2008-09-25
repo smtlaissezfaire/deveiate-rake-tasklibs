@@ -303,4 +303,6 @@ end
 
 desc "Package up a release, publish it, and send out notifications"
 task :release => 'release:default'
+task :rerelease => 'release:rerelease'
+task :testrelease => 'release:test'
 

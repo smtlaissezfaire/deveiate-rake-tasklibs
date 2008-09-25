@@ -314,21 +314,23 @@ end
 
 ### Display a description of a potentially-dangerous task, and prompt
 ### for confirmation. If the user answers with anything that begins
-### with 'y', yield to the block, else raise with an error.
-def ask_for_confirmation( description )
+### with 'y', yield to the block. If +abort_on_decline+ is +true+,
+### any non-'y' answer will fail with an error message.
+def ask_for_confirmation( description, abort_on_decline=true )
 	puts description
 
 	answer = prompt_with_default( "Continue?", 'n' ) do |input|
 		input =~ /^[yn]/i
 	end
 
-	case answer
-	when /^y/i
-		yield
-	else
+	if answer =~ /^y/i
+		return yield
+	elsif abort_on_decline
 		error "Aborted."
 		fail
 	end
+
+	return false
 end
 alias :prompt_for_confirmation :ask_for_confirmation
 
