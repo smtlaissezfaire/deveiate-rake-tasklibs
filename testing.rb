@@ -10,7 +10,7 @@ COVERAGE_MINIMUM = 85.0 unless defined?( COVERAGE_MINIMUM )
 SPEC_FILES       = [] unless defined?( SPEC_FILES )
 TEST_FILES       = [] unless defined?( TEST_FILES )
 
-COMMON_SPEC_OPTS = ['-c', '-f', 's'] unless defined?( COMMON_SPEC_OPTS )
+COMMON_SPEC_OPTS = ['-Du', '-b'] unless defined?( COMMON_SPEC_OPTS )
 
 COVERAGE_TARGETDIR = BASEDIR + 'coverage' unless defined?( COVERAGE_TARGETDIR )
 RCOV_EXCLUDES      = 'spec,tests,/Library/Ruby,/var/lib,/usr/local/lib' unless
@@ -21,7 +21,7 @@ desc "Run all defined tests"
 task :test do
 	unless SPEC_FILES.empty?
 		log "Running specs"
-		Rake::Task['spec:quiet'].invoke
+		Rake::Task['spec:text'].invoke
 	end
 	
 	unless TEST_FILES.empty?
@@ -37,12 +37,7 @@ begin
 	require 'spec/rake/spectask'
 
 	### Task: spec
-	Spec::Rake::SpecTask.new( :spec ) do |task|
-		task.spec_files = SPEC_FILES
-		task.libs += [LIBDIR]
-		task.spec_opts = COMMON_SPEC_OPTS
-	end
-
+	task :spec => 'spec:doc'
 
 	namespace :spec do
 		desc "Run rspec every time there's a change to one of the files"
@@ -50,28 +45,33 @@ begin
 			require 'autotest/rspec'
 
 			autotester = Autotest::Rspec.new
-			autotester.exceptions = %r{\.svn|\.skel}
 			autotester.run
 		end
 
+		desc "Generate regular color 'doc' spec output"
+		Spec::Rake::SpecTask.new( :doc ) do |task|
+			task.spec_files = SPEC_FILES
+			task.spec_opts = COMMON_SPEC_OPTS + ['-f', 's', '-c']
+		end
 
-		desc "Generate quiet output"
+		desc "Generate spec output with profiling"
+		Spec::Rake::SpecTask.new( :profile ) do |task|
+			task.spec_files = SPEC_FILES
+			task.spec_opts = COMMON_SPEC_OPTS + ['-f', 'o']
+		end
+
+		desc "Generate quiet non-colored plain-text output"
 		Spec::Rake::SpecTask.new( :quiet ) do |task|
 			task.spec_files = SPEC_FILES
-			task.spec_opts = ['-f', 'p', '-D']
+			task.spec_opts = COMMON_SPEC_OPTS + ['-f', 'p']
 		end
 
-		desc "Generate HTML output for a spec run"
+		desc "Generate HTML output"
 		Spec::Rake::SpecTask.new( :html ) do |task|
 			task.spec_files = SPEC_FILES
-			task.spec_opts = ['-f','h', '-D']
+			task.spec_opts = COMMON_SPEC_OPTS + ['-f', 'h']
 		end
 
-		desc "Generate plain-text output for a CruiseControl.rb build"
-		Spec::Rake::SpecTask.new( :text ) do |task|
-			task.spec_files = SPEC_FILES
-			task.spec_opts = ['-f','p']
-		end
 	end
 rescue LoadError => err
 	task :no_rspec do
@@ -81,9 +81,10 @@ rescue LoadError => err
 	task :spec => :no_rspec
 	namespace :spec do
 		task :autotest => :no_rspec
+		task :doc => :no_rspec
+		task :profile => :no_rspec
 		task :quiet => :no_rspec
 		task :html => :no_rspec
-		task :text => :no_rspec
 	end
 end
 
