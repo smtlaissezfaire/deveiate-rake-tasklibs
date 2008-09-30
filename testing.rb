@@ -21,7 +21,7 @@ desc "Run all defined tests"
 task :test do
 	unless SPEC_FILES.empty?
 		log "Running specs"
-		Rake::Task['spec:text'].invoke
+		Rake::Task['spec:quiet'].invoke
 	end
 	
 	unless TEST_FILES.empty?
