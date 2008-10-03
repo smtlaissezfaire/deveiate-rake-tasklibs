@@ -352,7 +352,6 @@ namespace :svn do
 		end
 		
 		svninfo      = get_svn_info()
-		tag          = make_new_tag()
 		svntrunk     = Pathname.new( svninfo['Repository Root'] ) + SVN_TRUNK_DIR
 		svnbranchdir = Pathname.new( svninfo['Repository Root'] ) + SVN_BRANCHES_DIR
 		svnbranch    = svnbranchdir + args.name
@@ -364,6 +363,20 @@ namespace :svn do
 			ask_for_confirmation( "Switch to the new branch?", false ) do
 				run 'svn', 'sw', svnbranch
 			end
+		end
+	end
+	
+
+	desc "Switch to the trunk if the working copy isn't there already."
+	task :trunk do
+		svninfo      = get_svn_info()
+		svntrunk     = Pathname.new( svninfo['Repository Root'] ) + SVN_TRUNK_DIR
+		
+		if svninfo['URL'] != svntrunk.to_s
+			log "Switching to #{svntrunk}"
+			run 'svn', 'sw', svntrunk
+		else
+			log "You are already on trunk (#{svntrunk})"
 		end
 	end
 	
