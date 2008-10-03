@@ -342,6 +342,30 @@ namespace :svn do
 	end
 
 
+	desc "Copy the HEAD revision of the current #{SVN_TRUNK_DIR}/ to #{SVN_BRANCHES_DIR} with a " +
+	     "user-specified name."
+	task :branch, [:name] do |task, args|
+		unless args.name
+			args.name = prompt( "Branch name" ) or abort
+		end
+		
+		svninfo      = get_svn_info()
+		tag          = make_new_tag()
+		svntrunk     = Pathname.new( svninfo['Repository Root'] ) + SVN_TRUNK_DIR
+		svnbranchdir = Pathname.new( svninfo['Repository Root'] ) + SVN_BRANCHES_DIR
+		svnbranch    = svnbranchdir + args.name
+
+		desc = "Making a new branch: #{svnbranch}"
+		ask_for_confirmation( desc ) do
+			msg = prompt_with_default( "Commit log: ", "Making a '#{args.name}' branch" )
+			run 'svn', 'cp', '-m', msg, svntrunk, svnbranch
+			ask_for_confirmation( "Switch to the new branch?", false ) do
+				run 'svn', 'sw', svnbranch
+			end
+		end
+	end
+	
+
 	desc "Copy the most recent tag to #{SVN_RELEASES_DIR}/#{PKG_VERSION}"
 	task :release do
 		last_tag    = get_latest_svn_timestamp_tag()
