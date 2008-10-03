@@ -6,6 +6,8 @@
 # * Michael Granger <ged@FaerieMUD.org>
 # 
 
+require 'rubygems'
+gem 'rake', '>= 0.8.3'
 
 require 'pp'
 require 'yaml'
