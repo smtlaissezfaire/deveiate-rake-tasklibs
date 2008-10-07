@@ -46,7 +46,7 @@ PROJECT_NAME  = '<%= settings['project_name'] %>'
 PKG_NAME      = PROJECT_NAME.downcase
 PKG_SUMMARY   = '<%= settings['project_summary'] %>'
 VERSION_FILE  = LIBDIR + '<%= settings["version_file"] || settings["project_name"].downcase + ".rb" %>'
-PKG_VERSION   = VERSION_FILE.read[ /VERSION = '(\d+\.\d+\.\d+)'/, 1 ]
+PKG_VERSION   = VERSION_FILE.read[ /VERSION\s*=\s*'(\d+\.\d+\.\d+)'/, 1 ]
 PKG_FILE_NAME = "#{PKG_NAME.downcase}-#{PKG_VERSION}"
 GEM_FILE_NAME = "#{PKG_FILE_NAME}.gem"
 
