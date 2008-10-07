@@ -40,6 +40,7 @@ LIBDIR        = BASEDIR + 'lib'
 EXTDIR        = BASEDIR + 'ext'
 DOCSDIR       = BASEDIR + 'docs'
 PKGDIR        = BASEDIR + 'pkg'
+DATADIR       = BASEDIR + 'data'
 
 PROJECT_NAME  = '<%= settings['project_name'] %>'
 PKG_NAME      = PROJECT_NAME.downcase
@@ -55,6 +56,7 @@ TEXT_FILES    = %w( Rakefile ChangeLog README LICENSE ).collect {|filename| BASE
 BIN_FILES     = Pathname.glob( BINDIR + '*' ).delete_if {|item| item =~ /\.svn/ }
 LIB_FILES     = Pathname.glob( LIBDIR + '**/*.rb' ).delete_if {|item| item =~ /\.svn/ }
 EXT_FILES     = Pathname.glob( EXTDIR + '**/*.{c,h,rb}' ).delete_if {|item| item =~ /\.svn/ }
+DATA_FILES    = Pathname.glob( DATADIR + '**/*' ).delete_if {|item| item =~ /\.svn/ }
 
 SPECDIR       = BASEDIR + 'spec'
 SPECLIBDIR    = SPECDIR + 'lib'
@@ -81,6 +83,7 @@ RELEASE_FILES = TEXT_FILES +
 	BIN_FILES +
 	LIB_FILES + 
 	EXT_FILES + 
+	DATA_FILES + 
 	RAKE_TASKLIBS +
 	EXTRA_PKGFILES
 
