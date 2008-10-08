@@ -40,6 +40,9 @@ RAKEFILE              = TARGETDIR + 'Rakefile'
 LICENSE_TEMPLATE      = TASKLIBDIR + 'LICENSE.template.erb'
 LICENSE               = TARGETDIR + 'LICENSE'
 
+README_TEMPLATE       = TASKLIBDIR + 'README.template.erb'
+README                = TARGETDIR + 'README'
+
 
 #####################################################################
 ###	H E L P E R   F U N C T I O N S
@@ -130,7 +133,7 @@ end
 ###	T A S K S
 #####################################################################
 
-task :default => [ RAKEFILE, LICENSE ]
+task :default => [ RAKEFILE, LICENSE, README ]
 
 
 ### Main task: build the Rakefile by merging values from the project settings file with the 
@@ -157,6 +160,19 @@ task LICENSE.to_s => [ LICENSE_TEMPLATE, PROJECT_SETTINGS_FILE ] do
 
 	output = template.result( binding() )
 	LICENSE.open( File::WRONLY|File::CREAT|File::TRUNC ) do |fh|
+		fh.print output
+	end
+end
+
+
+### Task: Build a README file
+desc "Generate a new project README file in the current directory"
+task README.to_s => [ README_TEMPLATE, PROJECT_SETTINGS_FILE ] do
+	template = ERB.new( README_TEMPLATE.read, nil, '<>' )
+	settings = YAML.load_file( PROJECT_SETTINGS_FILE )
+
+	output = template.result( binding() )
+	README.open( File::WRONLY|File::CREAT|File::TRUNC ) do |fh|
 		fh.print output
 	end
 end
