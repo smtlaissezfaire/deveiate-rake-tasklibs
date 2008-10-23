@@ -59,7 +59,12 @@ end
 def run( *cmd )
 	cmd.flatten!
 
-	log( cmd.collect {|part| part =~ /\s/ ? part.inspect : part} ) 
+	if cmd.length > 1
+		trace( cmd.collect {|part| part =~ /\s/ ? part.inspect : part} ) 
+	else
+		trace( cmd )
+	end
+	
 	if $dryrun
 		$deferr.puts "(dry run mode)"
 	else
@@ -68,6 +73,14 @@ def run( *cmd )
 			fail "Command failed: [%s]" % [cmd.join(' ')]
 		end
 	end
+end
+
+
+### Run a subordinate Rake process with the same options and the specified +targets+.
+def rake( *targets )
+	opts = ARGV.select {|arg| arg[0,1] == '-' }
+	args = opts + targets.map {|t| t.to_s }
+	run 'rake', *args
 end
 
 
